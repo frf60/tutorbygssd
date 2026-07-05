@@ -129,9 +129,9 @@ src="https://www.facebook.com/tr?id=1461092668141323&ev=PageView&noscript=1"
                 <label>সময় (Duration):</label>
                 <select id="duration" required>
                     <option value="" disabled selected>নির্বাচন করুন</option>
-                    <option value="1 hour">1 hour</option>
-                    <option value="1.5 hour">1.5 hour</option>
-                    <option value="2 hour">2 hour</option>
+                    <option value="প্রতিদিন ১ ঘন্টা (1 hour)">প্রতিদিন ১ ঘন্টা (1 hour)</option>
+                    <option value="প্রতিদিন ১ ঘন্টা ৩০ মিনিট (1.5 hour)">প্রতিদিন ১ ঘন্টা ৩০ মিনিট (1.5 hour)</option>
+                    <option value="প্রতিদিন ২ ঘন্টা (2 hours)">প্রতিদিন ২ ঘন্টা (2 hours)</option>
                 </select>
             </div>
 
@@ -321,6 +321,8 @@ src="https://www.facebook.com/tr?id=1461092668141323&ev=PageView&noscript=1"
         let finalMessage = "";
 
         checkBtn.addEventListener('click', () => {
+            // ফেসবুক ইনিশিয়েট চেকআউট ইভেন্ট ট্র্যাকিং
+    fbq('track', 'InitiateCheckout');
             const district = document.getElementById('district').value;
             const phone = document.getElementById('phone').value;
             const address = document.getElementById('address').value;
@@ -395,22 +397,12 @@ src="https://www.facebook.com/tr?id=1461092668141323&ev=PageView&noscript=1"
             summarySection.style.display = 'none';
             formSection.style.display = 'block';
         });
-
-        submitBtn.addEventListener('click', () => {
-            submitBtn.addEventListener('click', () => {
-    // ফেসবুক ট্র্যাকিং কোড এখানে যোগ করা হলো
+    submitBtn.addEventListener('click', () => {
+    // ফেসবুক লিড ইভেন্ট ট্র্যাকিং
     fbq('track', 'Lead'); 
     
     submitBtn.disabled = true;
-    submitBtn.innerText = 'অপেক্ষা করুন...';
-
-    // আপনার পূর্বের বাকি কোডগুলো এখানে থাকবে (const formData = new FormData(); ইত্যাদি...)
-    const formData = new FormData();
-    // ... বাকি লাইনগুলো নিচে যেমন আছে তেমনই থাকবে
-});
-            submitBtn.disabled = true;
-            submitBtn.innerText = 'অপেক্ষা করুন...';
-
+    submitBtn.innerText = 'অপেক্ষা করুন..
             const formData = new FormData();
             for (const key in formDataObj) {
                 formData.append(key, formDataObj[key]);
