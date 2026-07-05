@@ -321,8 +321,9 @@ src="https://www.facebook.com/tr?id=1461092668141323&ev=PageView&noscript=1"
         let finalMessage = "";
 
         checkBtn.addEventListener('click', () => {
-            // ফেসবুক ইনিশিয়েট চেকআউট ইভেন্ট ট্র্যাকিং
-    fbq('track', 'InitiateCheckout');
+            // ফেসবুক ইনিশিয়েট চেকআউট ইভেন্ট ট্র্যাকিং
+            fbq('track', 'InitiateCheckout');
+            
             const district = document.getElementById('district').value;
             const phone = document.getElementById('phone').value;
             const address = document.getElementById('address').value;
@@ -367,7 +368,7 @@ src="https://www.facebook.com/tr?id=1461092668141323&ev=PageView&noscript=1"
                     groupTextSheet = ` [Group: ${sGroups[i].value}]`;
                 }
 
-                studentDetailsText += `[শিক্ষার্থী ${i+1}] ক্লাস: ${sClasses[i].value}${groupTextStr}, মিডিয়াম: ${sMediums[i].value}\nবিষয়: ${sSubjects[i].value}\n`;
+                studentDetailsText += `[শিক্ষার্থী ${i+1}] ক্লাস: ${sClasses[i].value}${groupTextStr}, মিডিয়াম: ${sMediums[i].value}\nবিষয়: ${sSubjects[i].value}\n`;
                 studentDetailsForSheet += `Student ${i+1}: Class ${sClasses[i].value}${groupTextSheet} (${sMediums[i].value}), Subjects: ${sSubjects[i].value} | `;
             }
 
@@ -397,12 +398,14 @@ src="https://www.facebook.com/tr?id=1461092668141323&ev=PageView&noscript=1"
             summarySection.style.display = 'none';
             formSection.style.display = 'block';
         });
-    submitBtn.addEventListener('click', () => {
-    // ফেসবুক লিড ইভেন্ট ট্র্যাকিং
-    fbq('track', 'Lead'); 
-    
-    submitBtn.disabled = true;
-    submitBtn.innerText = 'অপেক্ষা করুন..
+        
+        submitBtn.addEventListener('click', () => {
+            // ফেসবুক লিড ইভেন্ট ট্র্যাকিং
+            fbq('track', 'Lead'); 
+            
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'অপেক্ষা করুন...'; // This line was previously broken
+            
             const formData = new FormData();
             for (const key in formDataObj) {
                 formData.append(key, formDataObj[key]);
