@@ -397,6 +397,17 @@ src="https://www.facebook.com/tr?id=1599386625078878&ev=PageView&noscript=1"
         });
 
         submitBtn.addEventListener('click', () => {
+            submitBtn.addEventListener('click', () => {
+    // ফেসবুক ট্র্যাকিং কোড এখানে যোগ করা হলো
+    fbq('track', 'Lead'); 
+    
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'অপেক্ষা করুন...';
+
+    // আপনার পূর্বের বাকি কোডগুলো এখানে থাকবে (const formData = new FormData(); ইত্যাদি...)
+    const formData = new FormData();
+    // ... বাকি লাইনগুলো নিচে যেমন আছে তেমনই থাকবে
+});
             submitBtn.disabled = true;
             submitBtn.innerText = 'অপেক্ষা করুন...';
 
