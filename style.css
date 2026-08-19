@@ -381,6 +381,6 @@ textarea { resize: vertical; min-height: 80px; }
 }
 
 @media (max-width: 420px) {
-    .role-tab-sub { display: none; }
     .hero h1 { font-size: 24px; }
 }
+
