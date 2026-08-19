@@ -312,6 +312,74 @@ textarea { resize: vertical; min-height: 80px; }
     * { animation: none !important; transition: none !important; }
 }
 
+/* ============ Button loading spinner ============ */
+.btn.is-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+.btn.is-loading::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    top: 50%; left: 50%;
+    margin: -9px 0 0 -9px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============ Page entrance animation ============ */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.entrance { animation: fadeUp 0.5s ease both; }
+
+/* ============ Celebrate illustrations (happy guardian/student/teacher) ============ */
+.celebrate-wrap {
+    text-align: center;
+    padding: 18px 0 24px;
+}
+.celebrate-icon {
+    width: 130px;
+    margin: 0 auto 12px;
+    animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes popIn {
+    0% { transform: scale(0.4); opacity: 0; }
+    70% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+}
+.celebrate-hand {
+    transform-origin: 70% 85%;
+    animation: wave 0.7s ease-in-out infinite;
+}
+@keyframes wave {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(16deg); }
+}
+.celebrate-bounce {
+    animation: gentleBounce 1.6s ease-in-out infinite;
+}
+@keyframes gentleBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+.celebrate-title {
+    font-family: 'Baloo Da 2', sans-serif;
+    font-size: 19px;
+    color: var(--color-primary);
+    margin: 0 0 6px;
+}
+.celebrate-sub {
+    font-size: 14px;
+    color: var(--color-ink-soft);
+    margin: 0;
+}
+
 @media (max-width: 420px) {
     .role-tab-sub { display: none; }
     .hero h1 { font-size: 24px; }
