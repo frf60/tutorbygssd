@@ -65,12 +65,12 @@
     <nav class="role-tabs">
         <button type="button" class="role-tab active" data-role="guardian">
             <span class="role-tab-icon">🎓</span>
-            <span class="role-tab-title">টিউটর খুঁজছি</span>
+            <span class="role-tab-title">টিউটর খুঁজছি (আমি গার্ডিয়ান)</span>
             <span class="role-tab-sub">অভিভাবক</span>
         </button>
         <button type="button" class="role-tab" data-role="teacher">
             <span class="role-tab-icon">📘</span>
-            <span class="role-tab-title">আমি পড়াতে চাই</span>
+            <span class="role-tab-title">পড়াতে চাই (আমি টিচার)</span>
             <span class="role-tab-sub">টিচার রেজিস্ট্রেশন</span>
         </button>
     </nav>
@@ -78,9 +78,9 @@
     <!-- ============ GUARDIAN FLOW (3-step wizard) ============ -->
     <section class="flow active" id="guardianFlow" data-flow="guardian">
         <div class="progress-track" id="progressTrack">
-            <div class="progress-step active" data-step="1">১<span>যোগাযোগ</span></div>
-            <div class="progress-step" data-step="2">২<span>শিক্ষার্থী</span></div>
-            <div class="progress-step" data-step="3">৩<span>সময় ও বাজেট</span></div>
+            <div class="progress-step active" data-step="১"><span>যোগাযোগ</span></div>
+            <div class="progress-step" data-step="২"><span>শিক্ষার্থীর তথ্য</span></div>
+            <div class="progress-step" data-step="৩"><span>সময় ও সম্মানী</span></div>
         </div>
 
         <form id="guardianForm">
@@ -91,7 +91,7 @@
 
             <!-- Step 1: Contact & Location -->
             <div class="section step-panel active" data-step="1">
-                <h2 class="section-title">যোগাযোগ ও লোকেশন</h2>
+                <h2 class="section-title">যোগাযোগ ও বাসার ঠিকানা</h2>
                 <div class="form-group">
                     <label for="district">জেলা</label>
                     <select id="district" required>
