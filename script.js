@@ -36,8 +36,10 @@ function goToStep(stepNum) {
     stepPanels.forEach(panel => {
         panel.classList.toggle('active', panel.dataset.step === String(stepNum));
     });
-    progressSteps.forEach(step => {
-        const n = Number(step.dataset.step);
+    // দ্রষ্টব্য: data-step-এ বাংলা সংখ্যা থাকলে Number() ভুল ফলাফল দেয় (NaN),
+    // তাই টেক্সট পার্স না করে সিরিয়াল পজিশন (index) দিয়ে হিসেব করা হচ্ছে
+    progressSteps.forEach((step, idx) => {
+        const n = idx + 1;
         step.classList.toggle('active', n === stepNum);
         step.classList.toggle('done', n < stepNum);
     });
@@ -376,15 +378,22 @@ editBtn.addEventListener('click', () => {
 submitBtn.addEventListener('click', () => {
     if (typeof fbq === 'function') fbq('track', 'Lead');
     submitBtn.disabled = true;
-    submitBtn.innerText = 'অপেক্ষা করুন...';
+    submitBtn.classList.add('is-loading');
+    editBtn.disabled = true;
 
     const formData = new FormData();
     for (const key in formDataObj) formData.append(key, formDataObj[key]);
 
     fetch(scriptURL, { method: 'POST', body: formData })
-        .then(() => { clearDraft(); redirectToWhatsApp(); })
-        .catch(error => { console.error('Error!', error.message); clearDraft(); redirectToWhatsApp(); });
+        .then(() => { clearDraft(); showGuardianCelebration(); })
+        .catch(error => { console.error('Error!', error.message); clearDraft(); showGuardianCelebration(); });
 });
+
+function showGuardianCelebration() {
+    document.getElementById('summaryFormBlock').style.display = 'none';
+    document.getElementById('guardianCelebrate').style.display = 'block';
+    setTimeout(redirectToWhatsApp, 1100); // অ্যানিমেশনটা একটু দেখার সময় দেওয়া হচ্ছে
+}
 
 function redirectToWhatsApp() {
     const encodedMessage = encodeURIComponent(finalMessage);
@@ -431,7 +440,7 @@ teacherForm.addEventListener('submit', async (e) => {
     if (!teacherForm.checkValidity()) { teacherForm.reportValidity(); return; }
 
     teacherSubmitBtn.disabled = true;
-    teacherSubmitBtn.innerText = 'আপলোড হচ্ছে, অপেক্ষা করুন...';
+    teacherSubmitBtn.classList.add('is-loading');
 
     try {
         const nidFile = document.getElementById('t_nid').files[0];
