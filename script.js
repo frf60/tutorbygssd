@@ -340,20 +340,33 @@ teacherForm.addEventListener('submit', async (e) => {
             fileToBase64(idCardFile)
         ]);
 
+        const name = document.getElementById('t_name').value;
+        const phone = document.getElementById('t_phone').value;
+        const address = document.getElementById('t_address').value;
+        const department = document.getElementById('t_department').value;
+        const session = document.getElementById('t_session').value;
+        const institution = document.getElementById('t_institution').value;
+        const sscInfo = document.getElementById('t_ssc').value;
+        const hscInfo = document.getElementById('t_hsc').value;
+        const experience = document.getElementById('t_experience').value;
+        const subjects = document.getElementById('t_subjects').value;
+        const locations = document.getElementById('t_locations').value;
+        const altPhone = document.getElementById('t_altphone').value;
+
         const formData = new FormData();
         formData.append('formType', 'teacher');
-        formData.append('Name', document.getElementById('t_name').value);
-        formData.append('Phone', document.getElementById('t_phone').value);
-        formData.append('Address', document.getElementById('t_address').value);
-        formData.append('Department', document.getElementById('t_department').value);
-        formData.append('Session', document.getElementById('t_session').value);
-        formData.append('Institution', document.getElementById('t_institution').value);
-        formData.append('SSC_Info', document.getElementById('t_ssc').value);
-        formData.append('HSC_Info', document.getElementById('t_hsc').value);
-        formData.append('Experience', document.getElementById('t_experience').value);
-        formData.append('Subjects_Classes', document.getElementById('t_subjects').value);
-        formData.append('Locations', document.getElementById('t_locations').value);
-        formData.append('Alt_Phone', document.getElementById('t_altphone').value);
+        formData.append('Name', name);
+        formData.append('Phone', phone);
+        formData.append('Address', address);
+        formData.append('Department', department);
+        formData.append('Session', session);
+        formData.append('Institution', institution);
+        formData.append('SSC_Info', sscInfo);
+        formData.append('HSC_Info', hscInfo);
+        formData.append('Experience', experience);
+        formData.append('Subjects_Classes', subjects);
+        formData.append('Locations', locations);
+        formData.append('Alt_Phone', altPhone);
         formData.append('NID_Base64', nidBase64);
         formData.append('NID_Filename', nidFile.name);
         formData.append('NID_MimeType', nidFile.type);
@@ -361,13 +374,13 @@ teacherForm.addEventListener('submit', async (e) => {
         formData.append('IDCard_Filename', idCardFile.name);
         formData.append('IDCard_MimeType', idCardFile.type);
 
-        await fetch(scriptURL, { method: 'POST', body: formData });
+        teacherSubmitBtn.innerText = 'রিডাইরেক্ট করা হচ্ছে...';
 
-        teacherForm.innerHTML = `<div style="text-align:center; padding: 20px 0;">
-            <p style="font-size:40px; margin:0 0 10px;">✅</p>
-            <h3 style="margin:0 0 8px;">রেজিস্ট্রেশন সম্পন্ন হয়েছে</h3>
-            <p style="color:var(--color-ink-soft);">আমরা যাচাই করে শীঘ্রই যোগাযোগ করব। ধন্যবাদ!</p>
-        </div>`;
+        const teacherMessage = `টিচার রেজিস্ট্রেশন\n\nনাম: ${name}\nফোন: ${phone}\nঠিকানা: ${address}\nপ্রতিষ্ঠান: ${institution}\nবিভাগ/সেশন: ${department} / ${session}\nএসএসসি: ${sscInfo}\nএইচএসসি: ${hscInfo}\nঅভিজ্ঞতা: ${experience}\nবিষয়/ক্লাস: ${subjects}\nলোকেশন: ${locations}\nবিকল্প নম্বর: ${altPhone}`;
+
+        fetch(scriptURL, { method: 'POST', body: formData })
+            .then(() => redirectTeacherToWhatsApp(teacherMessage))
+            .catch(err => { console.error('Teacher save error:', err); redirectTeacherToWhatsApp(teacherMessage); });
 
     } catch (err) {
         console.error('Teacher submit error:', err);
@@ -376,3 +389,9 @@ teacherForm.addEventListener('submit', async (e) => {
         alert('দুঃখিত, একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।');
     }
 });
+
+function redirectTeacherToWhatsApp(message) {
+    const encodedMessage = encodeURIComponent(message);
+    window.location.href = `https://wa.me/8801622505105?text=${encodedMessage}`;
+}
+
