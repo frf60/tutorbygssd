@@ -60,11 +60,15 @@ document.querySelectorAll('[data-next]').forEach(btn => {
         const currentPanel = btn.closest('.step-panel');
         if (!validateStep(currentPanel)) return;
         goToStep(Number(btn.dataset.next));
+        saveDraft();
     });
 });
 
 document.querySelectorAll('[data-back]').forEach(btn => {
-    btn.addEventListener('click', () => goToStep(Number(btn.dataset.back)));
+    btn.addEventListener('click', () => {
+        goToStep(Number(btn.dataset.back));
+        saveDraft();
+    });
 });
 
 /* ============================================================
@@ -144,6 +148,7 @@ function renderStudentFields(count) {
 }
 studentCountSelect.addEventListener('change', (e) => renderStudentFields(e.target.value));
 renderStudentFields(1);
+restoreDraft();
 
 /* ============================================================
    TIME CHECKBOXES (guardian step 3)
@@ -185,6 +190,102 @@ timeCheckboxes.forEach(cb => {
         }
     });
 });
+
+/* ============================================================
+   DRAFT AUTO-SAVE (গার্ডিয়ান) — ভুলে ট্যাব বন্ধ/রিফ্রেশ হলেও তথ্য থাকবে
+============================================================ */
+const DRAFT_KEY = 'guardianDraft_v1';
+
+function collectDraftData() {
+    const timeArr = Array.from(document.querySelectorAll('input[name="time"]:checked')).map(cb => cb.value);
+    const students = Array.from(document.querySelectorAll('.student-box')).map(box => ({
+        medium: box.querySelector('.s-medium')?.value || '',
+        cls: box.querySelector('.s-class')?.value || '',
+        group: box.querySelector('.s-group')?.value || '',
+        subjects: box.querySelector('.s-subjects')?.value || ''
+    }));
+    const currentStep = document.querySelector('#guardianFlow .step-panel.active')?.dataset.step || '1';
+
+    return {
+        step: currentStep,
+        district: document.getElementById('district').value,
+        phone: document.getElementById('phone').value,
+        address: document.getElementById('address').value,
+        teacherGender: document.getElementById('teacherGender').value,
+        studentCount: document.getElementById('studentCount').value,
+        students,
+        days: document.getElementById('days').value,
+        duration: document.getElementById('duration').value,
+        time: timeArr,
+        salary: document.getElementById('salary').value,
+        specialReq: document.getElementById('specialReq').value
+    };
+}
+
+function saveDraft() {
+    try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraftData()));
+    } catch (e) { /* localStorage অনুপলব্ধ হলে চুপচাপ ignore করা হবে */ }
+}
+
+function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+
+function restoreDraft() {
+    let saved;
+    try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        saved = JSON.parse(raw);
+    } catch (e) { return; }
+
+    const hasData = saved.district || saved.phone || saved.address;
+    if (!hasData) return;
+
+    const wantsRestore = confirm('আপনার আগের অসম্পূর্ণ তথ্য পাওয়া গেছে। সেটা দিয়ে চালিয়ে যেতে চান?');
+    if (!wantsRestore) { clearDraft(); return; }
+
+    document.getElementById('district').value = saved.district || '';
+    document.getElementById('phone').value = saved.phone || '';
+    document.getElementById('address').value = saved.address || '';
+    document.getElementById('teacherGender').value = saved.teacherGender || '';
+    document.getElementById('days').value = saved.days || '';
+    document.getElementById('duration').value = saved.duration || '';
+    document.getElementById('salary').value = saved.salary || '';
+    document.getElementById('specialReq').value = saved.specialReq || '';
+
+    if (saved.time && saved.time.length) {
+        document.querySelectorAll('input[name="time"]').forEach(cb => {
+            if (saved.time.includes(cb.value)) cb.checked = true;
+        });
+    }
+
+    if (saved.studentCount) {
+        studentCountSelect.value = saved.studentCount;
+        renderStudentFields(Number(saved.studentCount));
+        setTimeout(() => {
+            const boxes = document.querySelectorAll('.student-box');
+            (saved.students || []).forEach((s, i) => {
+                if (!boxes[i]) return;
+                const mediumEl = boxes[i].querySelector('.s-medium');
+                const classEl = boxes[i].querySelector('.s-class');
+                const groupEl = boxes[i].querySelector('.s-group');
+                const subjEl = boxes[i].querySelector('.s-subjects');
+                if (mediumEl) mediumEl.value = s.medium;
+                if (classEl) { classEl.value = s.cls; handleClassChange(classEl, i); }
+                if (groupEl) groupEl.value = s.group;
+                if (subjEl) subjEl.value = s.subjects;
+            });
+        }, 0);
+    }
+
+    goToStep(Number(saved.step) || 1);
+}
+
+// প্রতিটা ধাপ পরিবর্তনের সময় ও ফর্মে যেকোনো ইনপুটের সময় ড্রাফট সেভ হবে
+document.getElementById('guardianForm').addEventListener('input', saveDraft);
+document.getElementById('guardianForm').addEventListener('change', saveDraft);
 
 /* ============================================================
    GUARDIAN — Check & Submit
@@ -281,8 +382,8 @@ submitBtn.addEventListener('click', () => {
     for (const key in formDataObj) formData.append(key, formDataObj[key]);
 
     fetch(scriptURL, { method: 'POST', body: formData })
-        .then(() => redirectToWhatsApp())
-        .catch(error => { console.error('Error!', error.message); redirectToWhatsApp(); });
+        .then(() => { clearDraft(); redirectToWhatsApp(); })
+        .catch(error => { console.error('Error!', error.message); clearDraft(); redirectToWhatsApp(); });
 });
 
 function redirectToWhatsApp() {
@@ -394,4 +495,3 @@ function redirectTeacherToWhatsApp(message) {
     const encodedMessage = encodeURIComponent(message);
     window.location.href = `https://wa.me/8801622505105?text=${encodedMessage}`;
 }
-
