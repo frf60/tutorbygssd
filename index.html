@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>গৃহশিক্ষক/শিক্ষিকা দিচ্ছি | চট্টগ্রাম বিভাগের সকল জেলায় হোম টিউটর</title>
+    <title>গৃহশিক্ষক/শিক্ষিকা দিচ্ছি | চট্টগ্রাম, ফেনী, নোয়াখালীসহ আশেপাশের জেলায় হোম টিউটর</title>
     <meta name="description" content="চট্টগ্রাম, ফেনী, কুমিল্লা, নোয়াখালী সহ আশেপাশের জেলায় হোম টিউটর খুঁজুন অথবা টিচার হিসেবে যুক্ত হোন — বিনামূল্যে, মাত্র ১ মিনিটে।">
     <meta name="keywords" content="গৃহশিক্ষক, হোম টিউটর, চট্টগ্রাম টিউটর, ফেনী টিউটর, প্রাইভেট টিউটর, home tutor bangladesh">
     <link rel="canonical" href="https://your-domain-or-username.github.io/repo-name/">
@@ -59,18 +59,18 @@
                 <h1>গৃহশিক্ষক/শিক্ষিকা দিচ্ছি</h1>
             </div>
         </div>
-        <p class="hero-sub">হোম টিউটর খুঁজুন অথবা টিচার হিসেবে যুক্ত হোন সম্পূর্ণ ফ্রিতে</p>
+        <p class="hero-sub">বাসায় পড়ানোর জন্য টিউটর খুঁজুন, অথবা টিচার হিসেবে যুক্ত হোন — বিনামূল্যে।</p>
     </header>
 
     <nav class="role-tabs">
         <button type="button" class="role-tab active" data-role="guardian">
             <span class="role-tab-icon">🎓</span>
-            <span class="role-tab-title">টিউটর খুঁজছি (গার্ডিয়ান)</span>
+            <span class="role-tab-title">টিউটর খুঁজছি</span>
             <span class="role-tab-sub">অভিভাবক</span>
         </button>
         <button type="button" class="role-tab" data-role="teacher">
             <span class="role-tab-icon">📘</span>
-            <span class="role-tab-title">আমি পড়াতে চাই (টিউটর)</span>
+            <span class="role-tab-title">আমি পড়াতে চাই</span>
             <span class="role-tab-sub">টিচার রেজিস্ট্রেশন</span>
         </button>
     </nav>
@@ -199,7 +199,7 @@
 
     <!-- ============ SUMMARY ============ -->
     <section class="flow" id="summarySection" data-flow="guardian">
-        <div class="section">
+        <div class="section" id="summaryFormBlock">
             <h2 class="section-title">তথ্য যাচাই করুন</h2>
             <div class="summary-content" id="summaryContent"></div>
             <div class="btn-row">
@@ -207,11 +207,30 @@
                 <button type="button" id="submitBtn" class="btn btn-submit">টিচার খুঁজুন</button>
             </div>
         </div>
+
+        <!-- হ্যাপি গার্ডিয়ান + স্টুডেন্ট — সফল সাবমিশনের মুহূর্তে দেখা যাবে -->
+        <div class="section celebrate-wrap" id="guardianCelebrate" style="display:none;">
+            <svg class="celebrate-icon celebrate-bounce" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="55" cy="55" r="34" fill="#4F7A1A"/>
+                <circle cx="43" cy="48" r="4.5" fill="#1A1A1A"/>
+                <circle cx="67" cy="48" r="4.5" fill="#1A1A1A"/>
+                <path d="M40,63 Q55,80 70,63" stroke="#1A1A1A" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                <circle cx="118" cy="65" r="24" fill="#83BA2B"/>
+                <circle cx="110" cy="60" r="3.2" fill="#1A1A1A"/>
+                <circle cx="126" cy="60" r="3.2" fill="#1A1A1A"/>
+                <path d="M108,72 Q118,82 128,72" stroke="#1A1A1A" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+                <g class="celebrate-hand">
+                    <path d="M78,22 L78,8 M78,8 L72,14 M78,8 L84,14" stroke="#1A1A1A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+            </svg>
+            <p class="celebrate-title">ধন্যবাদ! তথ্য জমা হয়েছে</p>
+            <p class="celebrate-sub">WhatsApp-এ পাঠানো হচ্ছে...</p>
+        </div>
     </section>
 
     <!-- ============ TEACHER FLOW (native registration) ============ -->
     <section class="flow" id="teacherFlow" data-flow="teacher">
-        <div class="section">
+        <div class="section" id="teacherFormBlock">
             <p class="section-eyebrow">সম্পূর্ণ বিনামূল্যে</p>
             <h2 class="section-title">টিচার রেজিস্ট্রেশন</h2>
 
@@ -279,6 +298,21 @@
 
                 <button type="submit" id="teacherSubmitBtn" class="btn btn-accent">রেজিস্ট্রেশন সম্পন্ন করুন</button>
             </form>
+        </div>
+
+        <!-- হ্যাপি টিচার — রেজিস্ট্রেশন সফল হওয়ার মুহূর্তে দেখা যাবে -->
+        <div class="section celebrate-wrap" id="teacherCelebrate" style="display:none;">
+            <svg class="celebrate-icon celebrate-bounce" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="65" r="38" fill="#1A1A1A"/>
+                <circle cx="47" cy="60" r="5" fill="#fff"/>
+                <circle cx="73" cy="60" r="5" fill="#fff"/>
+                <path d="M44,75 Q60,92 76,75" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
+                <path d="M25,42 L60,26 L95,42 L60,58 Z" fill="#83BA2B"/>
+                <path d="M60,58 L60,72" stroke="#83BA2B" stroke-width="3"/>
+                <circle cx="60" cy="74" r="3" fill="#83BA2B"/>
+            </svg>
+            <p class="celebrate-title">রেজিস্ট্রেশন সম্পন্ন হয়েছে!</p>
+            <p class="celebrate-sub">WhatsApp-এ পাঠানো হচ্ছে...</p>
         </div>
     </section>
 
