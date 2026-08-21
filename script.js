@@ -217,6 +217,8 @@ function collectDraftData() {
         phone: document.getElementById('phone').value,
         address: document.getElementById('address').value,
         teacherGender: document.getElementById('teacherGender').value,
+        preferredDegree: document.getElementById('preferred_degree').value,
+        preferredInstitution: document.getElementById('preferred_institution').value,
         studentCount: document.getElementById('studentCount').value,
         students,
         days: document.getElementById('days').value,
@@ -255,6 +257,8 @@ function restoreDraft() {
     document.getElementById('phone').value = saved.phone || '';
     document.getElementById('address').value = saved.address || '';
     document.getElementById('teacherGender').value = saved.teacherGender || '';
+    document.getElementById('preferred_degree').value = saved.preferredDegree || '';
+    document.getElementById('preferred_institution').value = saved.preferredInstitution || '';
     document.getElementById('days').value = saved.days || '';
     document.getElementById('duration').value = saved.duration || '';
     document.getElementById('salary').value = saved.salary || '';
@@ -316,6 +320,8 @@ checkBtn.addEventListener('click', () => {
     const phone = document.getElementById('phone').value;
     const address = document.getElementById('address').value;
     const teacherGender = document.getElementById('teacherGender').value;
+    const preferredDegree = document.getElementById('preferred_degree').value;
+    const preferredInstitution = document.getElementById('preferred_institution').value;
     const studentCount = document.getElementById('studentCount').value;
     const days = document.getElementById('days').value;
     const duration = document.getElementById('duration').value;
@@ -337,8 +343,10 @@ checkBtn.addEventListener('click', () => {
     }
 
     let studentDetailsText = "", studentDetailsForSheet = "";
-    const studentClassesRaw = []; // পোস্ট-জেনারেশনের জন্য আলাদা রাখা (regex পার্সিং এড়াতে)
+    const studentClassesRaw = []; // পোস্ট-জেনারেশন ও ম্যাচিং-এর জন্য আলাদা রাখা (regex পার্সিং এড়াতে)
     const studentSubjectsRaw = [];
+    const studentMediumsRaw = [];
+    const studentGroupsRaw = [];
     const sMediums = document.querySelectorAll('.s-medium');
     const sClasses = document.querySelectorAll('.s-class');
     const sGroups = document.querySelectorAll('.s-group');
@@ -359,6 +367,8 @@ checkBtn.addEventListener('click', () => {
         studentDetailsForSheet += `Student ${i+1}: Class ${sClasses[i].value}${groupTextSheet} (${sMediums[i].value}), Subjects: ${sSubjects[i].value} | `;
         studentClassesRaw.push(sClasses[i].value);
         studentSubjectsRaw.push(sSubjects[i].value);
+        studentMediumsRaw.push(sMediums[i].value);
+        if (sGroups[i].value) studentGroupsRaw.push(sGroups[i].value);
     }
 
     finalMessage = `Location: ${district}\nAddress: ${address}\nPhone: ${phone}\n\nTeacher Required: ${teacherGender}\n\n-- Student Information --\nTotal Students: ${studentCount}\n${studentDetailsText}\n-- Schedule & Remuneration --\nDays: ${days}\nTime: ${timeStr}\nDuration: ${duration}\nSalary: ${salary}`;
@@ -367,8 +377,10 @@ checkBtn.addEventListener('click', () => {
     formDataObj = {
         formType: 'guardian',
         District: district, Phone: phone, Address: address, Teacher_Gender: teacherGender,
+        Preferred_Degree: preferredDegree, Preferred_Institution: preferredInstitution,
         Student_Count: studentCount, Student_Details: studentDetailsForSheet,
         Student_Classes: studentClassesRaw.join(','), Student_Subjects: studentSubjectsRaw.join(' | '),
+        Student_Mediums: studentMediumsRaw.join(','), Student_Groups: studentGroupsRaw.join(','),
         Days: days, Duration: duration, Time: timeStr, Salary: salary, Special_Requirements: specialReq
     };
 
@@ -554,6 +566,13 @@ teacherForm.addEventListener('input', teacherSaveDraft);
 teacherForm.addEventListener('change', teacherSaveDraft);
 teacherRestoreDraft();
 
+/* ---- বাংলা সংখ্যা → ইংরেজি সংখ্যা normalize (Sheet-এ consistent ডেটার জন্য) ---- */
+function normalizeDigits(str) {
+    if (!str) return str;
+    const bnDigits = '০১২৩৪৫৬৭৮৯';
+    return str.toString().replace(/[০-৯]/g, d => bnDigits.indexOf(d));
+}
+
 /* ---- ফাইল আপলোড স্ট্যাটাস ---- */
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -619,7 +638,7 @@ tCheckBtn.addEventListener('click', async () => {
         const institutionType = get('t_institution_type'), degreeType = get('t_degree_type');
         const sscGroup = get('t_ssc_group'), sscResult = get('t_ssc_result'), sscSchool = get('t_ssc_school');
         const hscGroup = get('t_hsc_group'), hscResult = get('t_hsc_result'), hscCollege = get('t_hsc_college');
-        const subjects = get('t_subjects'), experienceYears = get('t_experience_years');
+        const subjects = get('t_subjects'), experienceYears = normalizeDigits(get('t_experience_years'));
         const secondDocType = tSecondDocLabel.textContent;
 
         teacherFinalMessage =
