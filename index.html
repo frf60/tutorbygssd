@@ -341,25 +341,87 @@
         </div>
     </section>
 
-    <!-- ============ TEACHER FLOW (native registration) ============ -->
+    <!-- ============ TEACHER FLOW (4-step wizard + CV summary) ============ -->
     <section class="flow" id="teacherFlow" data-flow="teacher">
-        <div class="section" id="teacherFormBlock">
-            <p class="section-eyebrow">সম্পূর্ণ বিনামূল্যে</p>
-            <h2 class="section-title">টিচার রেজিস্ট্রেশন</h2>
+        <div class="progress-track" id="teacherProgressTrack">
+            <div class="progress-step active" data-step="১"><span>ব্যক্তিগত তথ্য</span></div>
+            <div class="progress-step" data-step="২"><span>শিক্ষাগত যোগ্যতা</span></div>
+            <div class="progress-step" data-step="৩"><span>পড়ানোর তথ্য</span></div>
+            <div class="progress-step" data-step="৪"><span>ডকুমেন্ট</span></div>
+        </div>
 
-            <form id="teacherForm">
+        <form id="teacherForm">
+            <!-- Step 1: ব্যক্তিগত তথ্য ও লোকেশন -->
+            <div class="section step-panel active" data-tstep="1">
+                <h2 class="section-title">ব্যক্তিগত তথ্য ও লোকেশন</h2>
                 <div class="form-group">
                     <label for="t_name">নাম</label>
                     <input type="text" id="t_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="t_gender">জেন্ডার</label>
+                    <select id="t_gender" required>
+                        <option value="" disabled selected>নির্বাচন করুন</option>
+                        <option value="পুরুষ">পুরুষ</option>
+                        <option value="মহিলা">মহিলা</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="t_phone">হোয়াটসঅ্যাপ/মোবাইল নাম্বার</label>
                     <input type="tel" id="t_phone" placeholder="উদা: 01xxxxxxxxx" required>
                 </div>
                 <div class="form-group">
-                    <label for="t_address">বর্তমান ঠিকানা</label>
+                    <label for="t_altphone">বিকল্প মোবাইল নম্বর (ঐচ্ছিক)</label>
+                    <input type="tel" id="t_altphone">
+                </div>
+                <div class="form-group">
+                    <label for="t_target_district">যে জেলায় টিউশন করাতে চান</label>
+                    <select id="t_target_district" required>
+                        <option value="" disabled selected>জেলা নির্বাচন করুন</option>
+                        <option value="চট্টগ্রাম">চট্টগ্রাম</option>
+                        <option value="ফেনী">ফেনী</option>
+                        <option value="কুমিল্লা">কুমিল্লা</option>
+                        <option value="নোয়াখালী">নোয়াখালী</option>
+                        <option value="লক্ষ্মীপুর">লক্ষ্মীপুর</option>
+                        <option value="চাঁদপুর">চাঁদপুর</option>
+                        <option value="খাগড়াছড়ি">খাগড়াছড়ি</option>
+                        <option value="বান্দরবান">বান্দরবান</option>
+                        <option value="রাঙামাটি">রাঙামাটি</option>
+                        <option value="কক্সবাজার">কক্সবাজার</option>
+                        <option value="ব্রাহ্মণবাড়িয়া">ব্রাহ্মণবাড়িয়া</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="t_address">বর্তমান ঠিকানা (বিস্তারিত)</label>
                     <input type="text" id="t_address" required>
                 </div>
+                <div class="form-group">
+                    <label for="t_permanent_address">স্থায়ী ঠিকানা</label>
+                    <input type="text" id="t_permanent_address" required>
+                </div>
+                <div class="form-group">
+                    <label for="t_locations">যেসব এলাকায় টিউশন করাতে চান (কমা দিয়ে লিখুন)</label>
+                    <input type="text" id="t_locations" required>
+                </div>
+                <div class="form-group">
+                    <label for="t_status">বর্তমান স্ট্যাটাস</label>
+                    <select id="t_status" required>
+                        <option value="" disabled selected>নির্বাচন করুন</option>
+                        <option value="স্টুডেন্ট">স্টুডেন্ট</option>
+                        <option value="কিন্ডারগার্টেন টিচার">কিন্ডারগার্টেন টিচার</option>
+                        <option value="প্রাইমারি স্কুল টিচার">প্রাইমারি স্কুল টিচার</option>
+                        <option value="হাই স্কুল টিচার">হাই স্কুল টিচার</option>
+                        <option value="কলেজ টিচার">কলেজ টিচার</option>
+                        <option value="কোচিং টিচার">কোচিং টিচার</option>
+                        <option value="মাদ্রাসা শিক্ষক">মাদ্রাসা শিক্ষক</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-accent" data-tnext="2">পরবর্তী ধাপ →</button>
+            </div>
+
+            <!-- Step 2: শিক্ষাগত যোগ্যতা -->
+            <div class="section step-panel" data-tstep="2">
+                <h2 class="section-title">শিক্ষাগত যোগ্যতা</h2>
                 <div class="form-group">
                     <label for="t_department">বিভাগ (ডিপার্টমেন্ট)</label>
                     <input type="text" id="t_department">
@@ -369,34 +431,163 @@
                     <input type="text" id="t_session">
                 </div>
                 <div class="form-group">
-                    <label for="t_institution">শিক্ষা প্রতিষ্ঠান</label>
+                    <label for="t_institution">বিশ্ববিদ্যালয়/প্রতিষ্ঠানের নাম</label>
                     <input type="text" id="t_institution" required>
                 </div>
                 <div class="form-group">
-                    <label for="t_ssc">এসএসসি — গ্রুপ, জিপিএ ও স্কুল</label>
-                    <input type="text" id="t_ssc">
+                    <label for="t_institution_type">প্রতিষ্ঠানের ধরণ</label>
+                    <select id="t_institution_type" required>
+                        <option value="" disabled selected>নির্বাচন করুন</option>
+                        <option value="পাবলিক বিশ্ববিদ্যালয়">পাবলিক বিশ্ববিদ্যালয়</option>
+                        <option value="প্রাইভেট বিশ্ববিদ্যালয়">প্রাইভেট বিশ্ববিদ্যালয়</option>
+                        <option value="জাতীয় বিশ্ববিদ্যালয়">জাতীয় বিশ্ববিদ্যালয়</option>
+                        <option value="পলিটেকনিক ইনস্টিটিউট">পলিটেকনিক ইনস্টিটিউট</option>
+                        <option value="মাদ্রাসা">মাদ্রাসা</option>
+                        <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="t_hsc">এইচএসসি — গ্রুপ, জিপিএ ও কলেজ</label>
-                    <input type="text" id="t_hsc">
+                    <label for="t_degree_type">ডিগ্রীর ধরণ</label>
+                    <select id="t_degree_type" required>
+                        <option value="" disabled selected>নির্বাচন করুন</option>
+                        <option value="বিএসসি">বিএসসি</option>
+                        <option value="এমএসসি">এমএসসি</option>
+                        <option value="বিবিএ">বিবিএ</option>
+                        <option value="এমবিএ">এমবিএ</option>
+                        <option value="বিএ">বিএ</option>
+                        <option value="এমএ">এমএ</option>
+                        <option value="বিএসএস">বিএসএস</option>
+                        <option value="এমএসএস">এমএসএস</option>
+                        <option value="পলিটেকনিক">পলিটেকনিক</option>
+                        <option value="আলিম">আলিম</option>
+                        <option value="ফাজিল">ফাজিল</option>
+                        <option value="হাফেজ/হাফেজা">হাফেজ/হাফেজা</option>
+                        <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                </div>
+
+                <h2 class="section-title" style="margin-top:24px;">এসএসসি তথ্য</h2>
+                <div class="form-group">
+                    <label for="t_ssc_group">গ্রুপ</label>
+                    <select id="t_ssc_group">
+                        <option value="" disabled selected>নির্বাচন করুন</option>
+                        <option value="বিজ্ঞান">বিজ্ঞান</option>
+                        <option value="ব্যবসা শিক্ষা">ব্যবসা শিক্ষা</option>
+                        <option value="মানবিক">মানবিক</option>
+                        <option value="মাদ্রাসা">মাদ্রাসা</option>
+                        <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="t_experience">অভিজ্ঞতা (বছর/বর্তমান টিউশন)</label>
-                    <input type="text" id="t_experience">
+                    <label for="t_ssc_result">রেজাল্ট/GPA</label>
+                    <input type="text" id="t_ssc_result">
                 </div>
                 <div class="form-group">
-                    <label for="t_subjects">যেসব শ্রেণি ও বিষয় পড়াতে চান (মিডিয়াম ও গ্রুপসহ)</label>
+                    <label for="t_ssc_school">স্কুলের নাম</label>
+                    <input type="text" id="t_ssc_school">
+                </div>
+
+                <h2 class="section-title" style="margin-top:24px;">এইচএসসি তথ্য</h2>
+                <div class="form-group">
+                    <label for="t_hsc_group">গ্রুপ</label>
+                    <select id="t_hsc_group">
+                        <option value="" disabled selected>নির্বাচন করুন</option>
+                        <option value="বিজ্ঞান">বিজ্ঞান</option>
+                        <option value="ব্যবসা শিক্ষা">ব্যবসা শিক্ষা</option>
+                        <option value="মানবিক">মানবিক</option>
+                        <option value="মাদ্রাসা">মাদ্রাসা</option>
+                        <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="t_hsc_result">রেজাল্ট/GPA</label>
+                    <input type="text" id="t_hsc_result">
+                </div>
+                <div class="form-group">
+                    <label for="t_hsc_college">কলেজের নাম</label>
+                    <input type="text" id="t_hsc_college">
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-ghost" data-tback="1">← পেছনে</button>
+                    <button type="button" class="btn btn-accent" data-tnext="3">পরবর্তী ধাপ →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: পড়ানোর তথ্য -->
+            <div class="section step-panel" data-tstep="3">
+                <h2 class="section-title">পড়ানোর তথ্য</h2>
+                <div class="form-group">
+                    <label>পড়ানোর সময় (একাধিক নির্বাচন করা যাবে)</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item" id="t-lbl-anytime"><input type="checkbox" name="t_time" value="যেকোনো সময়" id="t-cb-anytime"> যেকোনো সময়</label>
+                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="সকালে (৫:৩০-১০:৩০ টা)"> সকালে</label>
+                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="দুপুরে (১২:৩০-২:৩০ টা)"> দুপুরে</label>
+                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="বিকালে (২:৩০-মাগরিবের আগে পর্যন্ত)"> বিকালে</label>
+                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="সন্ধায় (মাগরিবের পর - ৮ টা)"> সন্ধায়</label>
+                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="রাতে (৮ - ১০:৩০ টা)"> রাতে</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>যেসব শ্রেণি পড়াতে পারবেন</label>
+                    <div class="checkbox-group" id="t_classes_group">
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="প্রি স্কুল"> প্রি স্কুল</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="লোয়ার কেজি"> লোয়ার কেজি</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="কেজি/নার্সারি"> কেজি/নার্সারি</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="আপার কেজি"> আপার কেজি</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="ওয়ান"> ওয়ান</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="টু"> টু</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="থ্রি"> থ্রি</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="ফোর"> ফোর</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="ফাইভ"> ফাইভ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="সিক্স"> সিক্স</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="সেভেন"> সেভেন</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এইট"> এইট</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="নাইন"> নাইন</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="টেন"> টেন</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এসএসসি পরীক্ষার্থী"> এসএসসি পরীক্ষার্থী</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="একাদশ"> একাদশ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="দ্বাদশ"> দ্বাদশ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এইচএসসি পরীক্ষার্থী"> এইচএসসি পরীক্ষার্থী</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এডমিশন প্রিপারেশন"> এডমিশন প্রিপারেশন</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>যেসব মিডিয়াম পড়াতে পারবেন</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item"><input type="checkbox" name="t_mediums" value="বাংলা মিডিয়াম (BM)"> বাংলা মিডিয়াম</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_mediums" value="ইংলিশ মিডিয়াম (EM)"> ইংলিশ মিডিয়াম</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_mediums" value="ইংলিশ ভার্সন (NC)"> ইংলিশ ভার্সন</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_mediums" value="মাদ্রাসা"> মাদ্রাসা</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_mediums" value="ভোকেশনাল/পলিটেকনিক"> ভোকেশনাল/পলিটেকনিক</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>যেসব গ্রুপ পড়াতে পারবেন</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="বিজ্ঞান"> বিজ্ঞান</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="ব্যবসা শিক্ষা"> ব্যবসা শিক্ষা</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="মানবিক"> মানবিক</label>
+                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="মাদ্রাসার আরবি বিষয়গুলো"> মাদ্রাসার আরবি বিষয়গুলো</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="t_subjects">বিষয়সমূহ (কমা দিয়ে লিখুন)</label>
                     <textarea id="t_subjects" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="t_locations">টিউশনের লোকেশন (কমা দিয়ে লিখুন)</label>
-                    <input type="text" id="t_locations" required>
+                    <label for="t_experience_years">পড়ানোর অভিজ্ঞতা (বছর সংখ্যা)</label>
+                    <input type="number" id="t_experience_years" min="0" step="1" placeholder="উদা: ২">
                 </div>
-                <div class="form-group">
-                    <label for="t_altphone">বিকল্প মোবাইল নম্বর (ঐচ্ছিক)</label>
-                    <input type="tel" id="t_altphone">
+                <div class="btn-row">
+                    <button type="button" class="btn btn-ghost" data-tback="2">← পেছনে</button>
+                    <button type="button" class="btn btn-accent" data-tnext="4">পরবর্তী ধাপ →</button>
                 </div>
+            </div>
 
+            <!-- Step 4: ডকুমেন্ট আপলোড -->
+            <div class="section step-panel" data-tstep="4">
+                <h2 class="section-title">ডকুমেন্ট আপলোড</h2>
                 <div class="form-group">
                     <label for="t_nid">এনআইডি কার্ড বা জন্ম নিবন্ধনের ছবি</label>
                     <input type="file" id="t_nid" accept="image/*,.pdf" required>
@@ -404,29 +595,17 @@
                     <p class="upload-status" id="t_nid_status"></p>
                 </div>
                 <div class="form-group">
-                    <label for="t_idcard">স্টুডেন্ট আইডি বা জব আইডি কার্ডের ছবি</label>
-                    <input type="file" id="t_idcard" accept="image/*,.pdf" required>
-                    <p class="upload-status" id="t_idcard_status"></p>
+                    <label for="t_second_doc" id="t_second_doc_label">দ্বিতীয় ডকুমেন্ট</label>
+                    <input type="file" id="t_second_doc" accept="image/*,.pdf" required>
+                    <p class="hint" id="t_second_doc_hint"></p>
+                    <p class="upload-status" id="t_second_doc_status"></p>
                 </div>
-
-                <button type="submit" id="teacherSubmitBtn" class="btn btn-accent">রেজিস্ট্রেশন সম্পন্ন করুন</button>
-            </form>
-        </div>
-
-        <!-- হ্যাপি টিচার — রেজিস্ট্রেশন সফল হওয়ার মুহূর্তে দেখা যাবে -->
-        <div class="section celebrate-wrap" id="teacherCelebrate" style="display:none;">
-            <svg class="celebrate-icon celebrate-bounce" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="60" cy="65" r="38" fill="#1A1A1A"/>
-                <circle cx="47" cy="60" r="5" fill="#fff"/>
-                <circle cx="73" cy="60" r="5" fill="#fff"/>
-                <path d="M44,75 Q60,92 76,75" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
-                <path d="M25,42 L60,26 L95,42 L60,58 Z" fill="#83BA2B"/>
-                <path d="M60,58 L60,72" stroke="#83BA2B" stroke-width="3"/>
-                <circle cx="60" cy="74" r="3" fill="#83BA2B"/>
-            </svg>
-            <p class="celebrate-title">রেজিস্ট্রেশন সম্পন্ন হয়েছে!</p>
-            <p class="celebrate-sub">WhatsApp-এ পাঠানো হচ্ছে...</p>
-        </div>
+                <div class="btn-row">
+                    <button type="button" class="btn btn-ghost" data-tback="3">← পেছনে</button>
+                    <button type="button" id="tCheckBtn" class="btn btn-submit">সারাংশ দেখুন</button>
+                </div>
+            </div>
+        </form>
 
         <!-- ============ টিচারদের সাধারণ জিজ্ঞাসা ============ -->
         <div class="section">
@@ -461,6 +640,33 @@
                 <summary>কোন কোন এলাকায় টিউশনের সুযোগ পাওয়া যায়?</summary>
                 <p>ফেনী, কুমিল্লাসহ চট্টগ্রাম বিভাগের সকল জেলা শহরে টিউশনের সুযোগ পাওয়া যায়।</p>
             </details>
+        </div>
+    </section>
+
+    <!-- ============ TEACHER SUMMARY (CV) ============ -->
+    <section class="flow" id="teacherSummarySection" data-flow="teacher">
+        <div class="section" id="teacherSummaryFormBlock">
+            <h2 class="section-title">সারাংশ (CV) — যাচাই করুন</h2>
+            <div class="summary-content" id="teacherSummaryContent"></div>
+            <div class="btn-row">
+                <button type="button" id="teacherEditBtn" class="btn btn-ghost">এডিট করুন</button>
+                <button type="button" id="teacherSubmitBtn" class="btn btn-accent">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+            </div>
+        </div>
+
+        <!-- হ্যাপি টিচার — রেজিস্ট্রেশন সফল হওয়ার মুহূর্তে দেখা যাবে -->
+        <div class="section celebrate-wrap" id="teacherCelebrate" style="display:none;">
+            <svg class="celebrate-icon celebrate-bounce" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="65" r="38" fill="#1A1A1A"/>
+                <circle cx="47" cy="60" r="5" fill="#fff"/>
+                <circle cx="73" cy="60" r="5" fill="#fff"/>
+                <path d="M44,75 Q60,92 76,75" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
+                <path d="M25,42 L60,26 L95,42 L60,58 Z" fill="#83BA2B"/>
+                <path d="M60,58 L60,72" stroke="#83BA2B" stroke-width="3"/>
+                <circle cx="60" cy="74" r="3" fill="#83BA2B"/>
+            </svg>
+            <p class="celebrate-title">রেজিস্ট্রেশন সম্পন্ন হয়েছে!</p>
+            <p class="celebrate-sub">WhatsApp-এ পাঠানো হচ্ছে...</p>
         </div>
     </section>
 
