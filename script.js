@@ -8,6 +8,7 @@ const roleTabs = document.querySelectorAll('.role-tab');
 const guardianFlow = document.getElementById('guardianFlow');
 const teacherFlow = document.getElementById('teacherFlow');
 const summarySection = document.getElementById('summarySection');
+const teacherSummarySection = document.getElementById('teacherSummarySection');
 
 roleTabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -18,10 +19,12 @@ roleTabs.forEach(tab => {
         if (role === 'guardian') {
             guardianFlow.classList.add('active');
             teacherFlow.classList.remove('active');
+            teacherSummarySection.classList.remove('active');
         } else {
             teacherFlow.classList.add('active');
             guardianFlow.classList.remove('active');
             summarySection.classList.remove('active');
+            teacherSummarySection.classList.remove('active');
         }
     });
 });
@@ -334,6 +337,8 @@ checkBtn.addEventListener('click', () => {
     }
 
     let studentDetailsText = "", studentDetailsForSheet = "";
+    const studentClassesRaw = []; // পোস্ট-জেনারেশনের জন্য আলাদা রাখা (regex পার্সিং এড়াতে)
+    const studentSubjectsRaw = [];
     const sMediums = document.querySelectorAll('.s-medium');
     const sClasses = document.querySelectorAll('.s-class');
     const sGroups = document.querySelectorAll('.s-group');
@@ -352,6 +357,8 @@ checkBtn.addEventListener('click', () => {
         }
         studentDetailsText += `[শিক্ষার্থী ${i+1}] ক্লাস: ${sClasses[i].value}${groupTextStr}, মিডিয়াম: ${sMediums[i].value}\nবিষয়: ${sSubjects[i].value}\n`;
         studentDetailsForSheet += `Student ${i+1}: Class ${sClasses[i].value}${groupTextSheet} (${sMediums[i].value}), Subjects: ${sSubjects[i].value} | `;
+        studentClassesRaw.push(sClasses[i].value);
+        studentSubjectsRaw.push(sSubjects[i].value);
     }
 
     finalMessage = `Location: ${district}\nAddress: ${address}\nPhone: ${phone}\n\nTeacher Required: ${teacherGender}\n\n-- Student Information --\nTotal Students: ${studentCount}\n${studentDetailsText}\n-- Schedule & Remuneration --\nDays: ${days}\nTime: ${timeStr}\nDuration: ${duration}\nSalary: ${salary}`;
@@ -361,6 +368,7 @@ checkBtn.addEventListener('click', () => {
         formType: 'guardian',
         District: district, Phone: phone, Address: address, Teacher_Gender: teacherGender,
         Student_Count: studentCount, Student_Details: studentDetailsForSheet,
+        Student_Classes: studentClassesRaw.join(','), Student_Subjects: studentSubjectsRaw.join(' | '),
         Days: days, Duration: duration, Time: timeStr, Salary: salary, Special_Requirements: specialReq
     };
 
@@ -401,20 +409,160 @@ function redirectToWhatsApp() {
 }
 
 /* ============================================================
-   TEACHER REGISTRATION
+   TEACHER REGISTRATION (4-step wizard + CV summary)
 ============================================================ */
 const teacherForm = document.getElementById('teacherForm');
+const teacherStepPanels = document.querySelectorAll('#teacherFlow .step-panel');
+const teacherProgressSteps = document.querySelectorAll('#teacherProgressTrack .progress-step');
+const tCheckBtn = document.getElementById('tCheckBtn');
+const teacherEditBtn = document.getElementById('teacherEditBtn');
 const teacherSubmitBtn = document.getElementById('teacherSubmitBtn');
+const teacherSummaryContent = document.getElementById('teacherSummaryContent');
 
+function goToTeacherStep(stepNum) {
+    teacherStepPanels.forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.tstep === String(stepNum));
+    });
+    teacherProgressSteps.forEach((step, idx) => {
+        const n = idx + 1;
+        step.classList.toggle('active', n === stepNum);
+        step.classList.toggle('done', n < stepNum);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('[data-tnext]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const currentPanel = btn.closest('.step-panel');
+        if (!validateStep(currentPanel)) return;
+        goToTeacherStep(Number(btn.dataset.tnext));
+        teacherSaveDraft();
+    });
+});
+document.querySelectorAll('[data-tback]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        goToTeacherStep(Number(btn.dataset.tback));
+        teacherSaveDraft();
+    });
+});
+
+/* ---- পড়ানোর সময় (t_time) — "যেকোনো সময়" এক্সক্লুসিভ লজিক ---- */
+const tTimeCheckboxes = document.querySelectorAll('input[name="t_time"]');
+const tAnyTimeCb = document.getElementById('t-cb-anytime');
+const tAnyTimeLabel = document.getElementById('t-lbl-anytime');
+
+tTimeCheckboxes.forEach(cb => {
+    cb.addEventListener('change', function() {
+        if (this === tAnyTimeCb && this.checked) {
+            tTimeCheckboxes.forEach(other => {
+                if (other !== tAnyTimeCb) {
+                    other.checked = false;
+                    other.disabled = true;
+                    other.parentElement.classList.add('disabled');
+                }
+            });
+        } else if (this === tAnyTimeCb && !this.checked) {
+            tTimeCheckboxes.forEach(other => {
+                other.disabled = false;
+                other.parentElement.classList.remove('disabled');
+            });
+        } else {
+            let checkedCount = 0;
+            tTimeCheckboxes.forEach(other => { if (other !== tAnyTimeCb && other.checked) checkedCount++; });
+            if (checkedCount > 0) {
+                tAnyTimeCb.checked = false;
+                tAnyTimeCb.disabled = true;
+                tAnyTimeLabel.classList.add('disabled');
+            } else {
+                tAnyTimeCb.disabled = false;
+                tAnyTimeLabel.classList.remove('disabled');
+            }
+        }
+    });
+});
+
+/* ---- স্ট্যাটাস অনুযায়ী ডাইনামিক দ্বিতীয় ডকুমেন্ট লেবেল ---- */
+const tStatusSelect = document.getElementById('t_status');
+const tSecondDocLabel = document.getElementById('t_second_doc_label');
+const tSecondDocHint = document.getElementById('t_second_doc_hint');
+
+function updateSecondDocLabel() {
+    const status = tStatusSelect.value;
+    if (status === 'স্টুডেন্ট') {
+        tSecondDocLabel.textContent = 'স্টুডেন্ট আইডি/ভর্তির প্রমাণ';
+        tSecondDocHint.textContent = 'বিভাগ ও সেশন যাচাইয়ের জন্য স্টুডেন্ট আইডি কার্ড বা ভর্তির রেজিস্ট্রেশনের ছবি দিন';
+    } else if (status) {
+        tSecondDocLabel.textContent = 'জব আইডি/প্রফেশনাল প্রমাণ';
+        tSecondDocHint.textContent = 'কর্মস্থলের আইডি কার্ড বা প্রাসঙ্গিক প্রমাণের ছবি দিন';
+    } else {
+        tSecondDocLabel.textContent = 'দ্বিতীয় ডকুমেন্ট';
+        tSecondDocHint.textContent = '';
+    }
+}
+tStatusSelect.addEventListener('change', updateSecondDocLabel);
+
+/* ---- Draft auto-save (টিচার) ---- */
+const T_DRAFT_KEY = 'teacherDraft_v1';
+const T_TEXT_FIELD_IDS = [
+    't_name', 't_gender', 't_phone', 't_altphone', 't_target_district', 't_address',
+    't_permanent_address', 't_locations', 't_status', 't_department', 't_session',
+    't_institution', 't_institution_type', 't_degree_type', 't_ssc_group', 't_ssc_result',
+    't_ssc_school', 't_hsc_group', 't_hsc_result', 't_hsc_college', 't_subjects', 't_experience_years'
+];
+const T_CHECKBOX_GROUPS = ['t_time', 't_classes', 't_mediums', 't_groups'];
+
+function teacherCollectDraftData() {
+    const data = { step: document.querySelector('#teacherFlow .step-panel.active')?.dataset.tstep || '1' };
+    T_TEXT_FIELD_IDS.forEach(id => { data[id] = document.getElementById(id).value; });
+    T_CHECKBOX_GROUPS.forEach(name => {
+        data[name] = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+    });
+    return data;
+}
+function teacherSaveDraft() {
+    try { localStorage.setItem(T_DRAFT_KEY, JSON.stringify(teacherCollectDraftData())); } catch (e) {}
+}
+function teacherClearDraft() {
+    try { localStorage.removeItem(T_DRAFT_KEY); } catch (e) {}
+}
+function teacherRestoreDraft() {
+    let saved;
+    try {
+        const raw = localStorage.getItem(T_DRAFT_KEY);
+        if (!raw) return;
+        saved = JSON.parse(raw);
+    } catch (e) { return; }
+
+    const hasData = saved.t_name || saved.t_phone;
+    if (!hasData) return;
+    if (!confirm('আপনার আগের অসম্পূর্ণ টিচার রেজিস্ট্রেশন তথ্য পাওয়া গেছে। সেটা দিয়ে চালিয়ে যেতে চান?')) { teacherClearDraft(); return; }
+
+    T_TEXT_FIELD_IDS.forEach(id => {
+        if (saved[id] !== undefined) document.getElementById(id).value = saved[id];
+    });
+    T_CHECKBOX_GROUPS.forEach(name => {
+        if (saved[name] && saved[name].length) {
+            document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
+                if (saved[name].includes(cb.value)) cb.checked = true;
+            });
+        }
+    });
+    updateSecondDocLabel();
+    goToTeacherStep(Number(saved.step) || 1);
+}
+teacherForm.addEventListener('input', teacherSaveDraft);
+teacherForm.addEventListener('change', teacherSaveDraft);
+teacherRestoreDraft();
+
+/* ---- ফাইল আপলোড স্ট্যাটাস ---- */
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]); // strip data:...;base64, prefix
+        reader.onload = () => resolve(reader.result.split(',')[1]);
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
 }
-
 function setupUploadStatus(inputId, statusId) {
     const input = document.getElementById(inputId);
     const status = document.getElementById(statusId);
@@ -433,72 +581,111 @@ function setupUploadStatus(inputId, statusId) {
     });
 }
 setupUploadStatus('t_nid', 't_nid_status');
-setupUploadStatus('t_idcard', 't_idcard_status');
+setupUploadStatus('t_second_doc', 't_second_doc_status');
 
-teacherForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!teacherForm.checkValidity()) { teacherForm.reportValidity(); return; }
+/* ---- ধাপ ৪ → সারাংশ (CV) তৈরি ---- */
+let teacherFormDataObj = {};
+let teacherFinalMessage = "";
 
-    teacherSubmitBtn.disabled = true;
-    teacherSubmitBtn.classList.add('is-loading');
+tCheckBtn.addEventListener('click', async () => {
+    const step4Panel = document.querySelector('#teacherFlow .step-panel[data-tstep="4"]');
+    if (!validateStep(step4Panel)) return;
+
+    const tTimeArr = Array.from(document.querySelectorAll('input[name="t_time"]:checked')).map(cb => cb.value);
+    const tClassesArr = Array.from(document.querySelectorAll('input[name="t_classes"]:checked')).map(cb => cb.value);
+    const tMediumsArr = Array.from(document.querySelectorAll('input[name="t_mediums"]:checked')).map(cb => cb.value);
+    const tGroupsArr = Array.from(document.querySelectorAll('input[name="t_groups"]:checked')).map(cb => cb.value);
+
+    if (tTimeArr.length === 0) { alert('অনুগ্রহ করে পড়ানোর সময় নির্বাচন করুন।'); return; }
+    if (tClassesArr.length === 0) { alert('অনুগ্রহ করে অন্তত একটা শ্রেণি নির্বাচন করুন।'); return; }
+    if (tMediumsArr.length === 0) { alert('অনুগ্রহ করে অন্তত একটা মিডিয়াম নির্বাচন করুন।'); return; }
+
+    tCheckBtn.disabled = true;
+    tCheckBtn.classList.add('is-loading');
 
     try {
         const nidFile = document.getElementById('t_nid').files[0];
-        const idCardFile = document.getElementById('t_idcard').files[0];
-        const [nidBase64, idCardBase64] = await Promise.all([
+        const secondDocFile = document.getElementById('t_second_doc').files[0];
+        const [nidBase64, secondDocBase64] = await Promise.all([
             fileToBase64(nidFile),
-            fileToBase64(idCardFile)
+            fileToBase64(secondDocFile)
         ]);
 
-        const name = document.getElementById('t_name').value;
-        const phone = document.getElementById('t_phone').value;
-        const address = document.getElementById('t_address').value;
-        const department = document.getElementById('t_department').value;
-        const session = document.getElementById('t_session').value;
-        const institution = document.getElementById('t_institution').value;
-        const sscInfo = document.getElementById('t_ssc').value;
-        const hscInfo = document.getElementById('t_hsc').value;
-        const experience = document.getElementById('t_experience').value;
-        const subjects = document.getElementById('t_subjects').value;
-        const locations = document.getElementById('t_locations').value;
-        const altPhone = document.getElementById('t_altphone').value;
+        const get = id => document.getElementById(id).value;
+        const name = get('t_name'), gender = get('t_gender'), phone = get('t_phone'), altPhone = get('t_altphone');
+        const targetDistrict = get('t_target_district'), address = get('t_address'), permanentAddress = get('t_permanent_address');
+        const locations = get('t_locations'), status = get('t_status');
+        const department = get('t_department'), session = get('t_session'), institution = get('t_institution');
+        const institutionType = get('t_institution_type'), degreeType = get('t_degree_type');
+        const sscGroup = get('t_ssc_group'), sscResult = get('t_ssc_result'), sscSchool = get('t_ssc_school');
+        const hscGroup = get('t_hsc_group'), hscResult = get('t_hsc_result'), hscCollege = get('t_hsc_college');
+        const subjects = get('t_subjects'), experienceYears = get('t_experience_years');
+        const secondDocType = tSecondDocLabel.textContent;
 
-        const formData = new FormData();
-        formData.append('formType', 'teacher');
-        formData.append('Name', name);
-        formData.append('Phone', phone);
-        formData.append('Address', address);
-        formData.append('Department', department);
-        formData.append('Session', session);
-        formData.append('Institution', institution);
-        formData.append('SSC_Info', sscInfo);
-        formData.append('HSC_Info', hscInfo);
-        formData.append('Experience', experience);
-        formData.append('Subjects_Classes', subjects);
-        formData.append('Locations', locations);
-        formData.append('Alt_Phone', altPhone);
-        formData.append('NID_Base64', nidBase64);
-        formData.append('NID_Filename', nidFile.name);
-        formData.append('NID_MimeType', nidFile.type);
-        formData.append('IDCard_Base64', idCardBase64);
-        formData.append('IDCard_Filename', idCardFile.name);
-        formData.append('IDCard_MimeType', idCardFile.type);
+        teacherFinalMessage =
+            `📋 টিউটর সিভি\n\n` +
+            `নাম: ${name}\nজেন্ডার: ${gender}\nফোন: ${phone}${altPhone ? ' / ' + altPhone : ''}\n` +
+            `যে জেলায় টিউশন করাতে চান: ${targetDistrict}\nবর্তমান ঠিকানা: ${address}\nস্থায়ী ঠিকানা: ${permanentAddress}\n` +
+            `টিউশনের এলাকা: ${locations}\nবর্তমান স্ট্যাটাস: ${status}\n\n` +
+            `-- শিক্ষাগত যোগ্যতা --\nবিভাগ/সেশন: ${department} / ${session}\nপ্রতিষ্ঠান: ${institution} (${institutionType})\nডিগ্রী: ${degreeType}\n` +
+            `এসএসসি: ${sscGroup}, ${sscResult}, ${sscSchool}\nএইচএসসি: ${hscGroup}, ${hscResult}, ${hscCollege}\n\n` +
+            `-- পড়ানোর তথ্য --\nসময়: ${tTimeArr.join(', ')}\nশ্রেণি: ${tClassesArr.join(', ')}\nমিডিয়াম: ${tMediumsArr.join(', ')}\n` +
+            `গ্রুপ: ${tGroupsArr.join(', ') || 'উল্লেখ নেই'}\nবিষয়: ${subjects}\nঅভিজ্ঞতা: ${experienceYears || '0'} বছর`;
 
-        teacherSubmitBtn.innerText = 'রিডাইরেক্ট করা হচ্ছে...';
+        teacherFormDataObj = {
+            formType: 'teacher',
+            Name: name, Gender: gender, Phone: phone, Alt_Phone: altPhone,
+            Target_District: targetDistrict, Address: address, Permanent_Address: permanentAddress,
+            Locations: locations, Current_Status: status,
+            Department: department, Session: session, Institution: institution,
+            Institution_Type: institutionType, Degree_Type: degreeType,
+            SSC_Group: sscGroup, SSC_Result: sscResult, SSC_School: sscSchool,
+            HSC_Group: hscGroup, HSC_Result: hscResult, HSC_College: hscCollege,
+            Available_Times: tTimeArr.join(', '), Teachable_Classes: tClassesArr.join(', '),
+            Teachable_Mediums: tMediumsArr.join(', '), Teachable_Groups: tGroupsArr.join(', '),
+            Subjects: subjects, Experience_Years: experienceYears,
+            NID_Base64: nidBase64, NID_Filename: nidFile.name, NID_MimeType: nidFile.type,
+            SecondDoc_Base64: secondDocBase64, SecondDoc_Filename: secondDocFile.name,
+            SecondDoc_MimeType: secondDocFile.type, SecondDoc_Type: secondDocType
+        };
 
-        const teacherMessage = `টিচার রেজিস্ট্রেশন\n\nনাম: ${name}\nফোন: ${phone}\nঠিকানা: ${address}\nপ্রতিষ্ঠান: ${institution}\nবিভাগ/সেশন: ${department} / ${session}\nএসএসসি: ${sscInfo}\nএইচএসসি: ${hscInfo}\nঅভিজ্ঞতা: ${experience}\nবিষয়/ক্লাস: ${subjects}\nলোকেশন: ${locations}\nবিকল্প নম্বর: ${altPhone}`;
-
-        fetch(scriptURL, { method: 'POST', body: formData })
-            .then(() => redirectTeacherToWhatsApp(teacherMessage))
-            .catch(err => { console.error('Teacher save error:', err); redirectTeacherToWhatsApp(teacherMessage); });
+        teacherSummaryContent.innerText = teacherFinalMessage;
+        teacherFlow.classList.remove('active');
+        teacherSummarySection.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err) {
-        console.error('Teacher submit error:', err);
-        teacherSubmitBtn.disabled = false;
-        teacherSubmitBtn.innerText = 'রেজিস্ট্রেশন সম্পন্ন করুন';
+        console.error('CV তৈরি করতে সমস্যা:', err);
         alert('দুঃখিত, একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+        tCheckBtn.disabled = false;
+        tCheckBtn.classList.remove('is-loading');
     }
 });
+
+teacherEditBtn.addEventListener('click', () => {
+    teacherSummarySection.classList.remove('active');
+    teacherFlow.classList.add('active');
+});
+
+teacherSubmitBtn.addEventListener('click', () => {
+    teacherSubmitBtn.disabled = true;
+    teacherSubmitBtn.classList.add('is-loading');
+    teacherEditBtn.disabled = true;
+
+    const formData = new FormData();
+    for (const key in teacherFormDataObj) formData.append(key, teacherFormDataObj[key]);
+
+    fetch(scriptURL, { method: 'POST', body: formData })
+        .then(() => { teacherClearDraft(); showTeacherCelebration(); })
+        .catch(err => { console.error('Teacher save error:', err); teacherClearDraft(); showTeacherCelebration(); });
+});
+
+function showTeacherCelebration() {
+    document.getElementById('teacherSummaryFormBlock').style.display = 'none';
+    document.getElementById('teacherCelebrate').style.display = 'block';
+    setTimeout(() => redirectTeacherToWhatsApp(teacherFinalMessage), 1100);
+}
 
 function redirectTeacherToWhatsApp(message) {
     const encodedMessage = encodeURIComponent(message);
