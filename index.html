@@ -204,6 +204,37 @@
                         <option value="মহিলা">মহিলা</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="preferred_degree">পছন্দের ডিগ্রী (ঐচ্ছিক)</label>
+                    <select id="preferred_degree">
+                        <option value="" selected>কোনো পছন্দ নেই</option>
+                        <option value="বিএসসি">বিএসসি</option>
+                        <option value="এমএসসি">এমএসসি</option>
+                        <option value="বিবিএ">বিবিএ</option>
+                        <option value="এমবিএ">এমবিএ</option>
+                        <option value="বিএ">বিএ</option>
+                        <option value="এমএ">এমএ</option>
+                        <option value="বিএসএস">বিএসএস</option>
+                        <option value="এমএসএস">এমএসএস</option>
+                        <option value="পলিটেকনিক">পলিটেকনিক</option>
+                        <option value="আলিম">আলিম</option>
+                        <option value="ফাজিল">ফাজিল</option>
+                        <option value="হাফেজ/হাফেজা">হাফেজ/হাফেজা</option>
+                        <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="preferred_institution">পছন্দের প্রতিষ্ঠানের ধরণ (ঐচ্ছিক)</label>
+                    <select id="preferred_institution">
+                        <option value="" selected>কোনো পছন্দ নেই</option>
+                        <option value="পাবলিক বিশ্ববিদ্যালয়">পাবলিক বিশ্ববিদ্যালয়</option>
+                        <option value="প্রাইভেট বিশ্ববিদ্যালয়">প্রাইভেট বিশ্ববিদ্যালয়</option>
+                        <option value="জাতীয় বিশ্ববিদ্যালয়">জাতীয় বিশ্ববিদ্যালয়</option>
+                        <option value="পলিটেকনিক ইনস্টিটিউট">পলিটেকনিক ইনস্টিটিউট</option>
+                        <option value="মাদ্রাসা">মাদ্রাসা</option>
+                        <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                </div>
                 <button type="button" class="btn btn-primary" data-next="2">পরবর্তী ধাপ →</button>
             </div>
 
@@ -577,7 +608,8 @@
                 </div>
                 <div class="form-group">
                     <label for="t_experience_years">পড়ানোর অভিজ্ঞতা (বছর সংখ্যা)</label>
-                    <input type="number" id="t_experience_years" min="0" step="1" placeholder="উদা: ২">
+                    <input type="text" inputmode="numeric" id="t_experience_years" placeholder="উদা: ২ অথবা 2">
+                    <p class="hint">বাংলা বা ইংরেজি, যেকোনো ভাষায় সংখ্যা লিখতে পারেন</p>
                 </div>
                 <div class="btn-row">
                     <button type="button" class="btn btn-ghost" data-tback="2">← পেছনে</button>
