@@ -1,0 +1,109 @@
+// subjects-data.js — FINAL
+// Structured data for cascading dropdowns (Medium -> Class Group -> Subjects)
+
+const SUBJECTS_DATA = {
+  "বাংলা মিডিয়াম (BM)": {
+    "প্লে - ৩য় শ্রেণি": [
+      "সকল বিষয়", "গণিত", "ইংরেজি", "বাংলা", "ড্রয়িং", "আরবি", "হাতের লেখা"
+    ],
+    "৪র্থ - ৫ম শ্রেণি": [
+      "সকল বিষয়", "গণিত", "ইংরেজি", "বাংলা", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "ধর্ম ও নৈতিক শিক্ষা", "ড্রয়িং", "আরবি", "হাতের লেখা"
+    ],
+    "৬ষ্ঠ - ৮ম শ্রেণি": [
+      "সকল বিষয়", "গণিত", "ইংরেজি", "বাংলা", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "ধর্ম ও নৈতিক শিক্ষা", "তথ্য ও যোগাযোগ প্রযুক্তি (ICT)", "কৃষি শিক্ষা", "গার্হস্থ্য বিজ্ঞান", "ড্রয়িং", "আরবি", "হাতের লেখা"
+    ],
+    "৯ম - এসএসসি": [
+      "সকল বিষয়", "সাইন্স গ্রুপ", "কমার্স গ্রুপ", "আর্টস গ্রুপ", "গণিত", "ইংরেজি", "বাংলা", "সাধারণ বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "ধর্ম ও নৈতিক শিক্ষা", "তথ্য ও যোগাযোগ প্রযুক্তি (ICT)", "উচ্চতর গণিত", "পদার্থবিজ্ঞান", "রসায়ন", "জীববিজ্ঞান", "হিসাববিজ্ঞান", "ফিন্যান্স ও ব্যাংকিং", "ব্যবসায় উদ্যোগ", "ইতিহাস", "ভূগোল ও পরিবেশ", "পৌরনীতি ও নাগরিকতা", "অর্থনীতি", "কৃষি শিক্ষা", "গার্হস্থ্য বিজ্ঞান", "শারীরিক শিক্ষা"
+    ],
+    "এইচএসসি": [
+      "সকল বিষয়", "সাইন্স গ্রুপ", "কমার্স গ্রুপ", "আর্টস গ্রুপ", "উচ্চতর গণিত", "পদার্থবিজ্ঞান", "রসায়ন", "জীববিজ্ঞান", "ইংরেজি", "বাংলা", "তথ্য ও যোগাযোগ প্রযুক্তি (ICT)", "হিসাববিজ্ঞান", "ফিন্যান্স ব্যাংকিং ও বিমা", "ব্যবসায় সংগঠন ও ব্যবস্থাপনা", "উৎপাদন ব্যবস্থাপনা ও বিপণন", "অর্থনীতি", "পৌরনীতি ও সুশাসন", "যুক্তিবিদ্যা", "সমাজবিজ্ঞান", "সমাজকর্ম", "ইতিহাস", "ইসলামের ইতিহাস ও সংস্কৃতি", "ভূগোল", "পরিসংখ্যান", "কৃষি শিক্ষা", "গার্হস্থ্য বিজ্ঞান"
+    ]
+  },
+
+  "ইংলিশ ভার্সন (NC)": {
+    "প্লে - ৩য় শ্রেণি": [
+      "All Subjects", "Mathematics", "English", "Bangla", "Drawing", "Arabic", "Handwriting"
+    ],
+    "৪র্থ - ৫ম শ্রেণি": [
+      "All Subjects", "Mathematics", "English", "Bangla", "Science", "Bangladesh and Global Studies (BGS)", "Religion", "Drawing", "Arabic", "Handwriting"
+    ],
+    "৬ষ্ঠ - ৮ম শ্রেণি": [
+      "All Subjects", "Mathematics", "English", "Bangla", "Science", "Bangladesh and Global Studies (BGS)", "Religion", "ICT", "Agriculture", "Home Science", "Drawing", "Arabic", "Handwriting"
+    ],
+    "৯ম - এসএসসি": [
+      "All Subjects", "Science Group", "Commerce Group", "Arts Group", "General Math", "English", "Bangla", "General Science", "BGS", "Religion", "ICT", "Higher Math", "Physics", "Chemistry", "Biology", "Accounting", "Finance & Banking", "Business Entrepreneurship", "History", "Geography", "Civics & Citizenship", "Economics", "Agriculture", "Home Science", "Physical Education"
+    ],
+    "এইচএসসি": [
+      "All Subjects", "Science Group", "Commerce Group", "Arts Group", "Higher Math", "Physics", "Chemistry", "Biology", "English", "Bangla", "ICT", "Accounting", "Finance, Banking & Insurance", "Business Organization & Management", "Production Management & Marketing", "Economics", "Civics & Good Governance", "Logic", "Sociology", "Social Work", "History", "Islamic History & Culture", "Geography", "Statistics", "Agriculture", "Home Science"
+    ]
+  },
+
+  "ইংলিশ মিডিয়াম (EM)": {
+    "Play - Grade 3": [
+      "All Subjects", "Mathematics", "English", "Science", "Phonics", "Art", "Handwriting"
+    ],
+    "Grade 4 - Grade 5": [
+      "All Subjects", "Mathematics", "English", "Science", "Geography", "History", "ICT", "Art"
+    ],
+    "Grade 6 - Grade 8": [
+      "All Subjects", "Mathematics", "English", "English Literature", "Science", "Geography", "History", "ICT", "French", "Spanish", "Art"
+    ],
+    "O Level / IGCSE (Grade 9 - 10)": [
+      "All Subjects", "Mathematics (Syllabus D)", "Pure Mathematics", "Additional Mathematics", "English Language", "English Literature", "Physics", "Chemistry", "Biology", "Human Biology", "Accounting", "Business Studies", "Economics", "Computer Science", "ICT", "Environmental Management", "Bengali"
+    ],
+    "A Level (Grade 11 - 12)": [
+      "Mathematics", "Further Mathematics", "Physics", "Chemistry", "Biology", "Accounting", "Business", "Economics", "Computer Science", "IT", "English Language", "English Literature", "Psychology", "Law", "Sociology"
+    ]
+  },
+
+  "মাদ্রাসা": {
+    "ইবতেদায়ি (প্লে - ৩য় শ্রেণি)": [
+      "সকল বিষয়", "কোরআন মাজিদ", "আরবি ১ম", "আরবি ২য়", "আকাইদ ও ফিকহ", "গণিত", "ইংরেজি", "বাংলা", "হাতের লেখা"
+    ],
+    "ইবতেদায়ি (৪র্থ - ৫ম শ্রেণি)": [
+      "সকল বিষয়", "কোরআন মাজিদ", "আরবি ১ম", "আরবি ২য়", "আকাইদ ও ফিকহ", "গণিত", "ইংরেজি", "বাংলা", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়"
+    ],
+    "দাখিল (৬ষ্ঠ - ৮ম শ্রেণি)": [
+      "সকল বিষয়", "কোরআন মাজিদ ও তাজভিদ", "আরবি ১ম", "আরবি ২য়", "আকাইদ ও ফিকহ", "গণিত", "ইংরেজি", "বাংলা", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "তথ্য ও যোগাযোগ প্রযুক্তি", "কৃষি শিক্ষা"
+    ],
+    "দাখিল (৯ম - ১০ম শ্রেণি)": [
+      "সকল বিষয়", "কোরআন মাজিদ ও তাজভিদ", "হাদিস শরিফ", "আরবি ১ম", "আরবি ২য়", "আকাইদ ও ফিকহ", "ইসলামের ইতিহাস", "গণিত", "ইংরেজি", "বাংলা", "সাধারণ বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "তথ্য ও যোগাযোগ প্রযুক্তি", "উচ্চতর গণিত", "পদার্থবিজ্ঞান", "রসায়ন", "জীববিজ্ঞান"
+    ],
+    "আলিম (১১শ - ১২শ শ্রেণি)": [
+      "কোরআন মাজিদ", "হাদিস শরিফ", "ফিকহ ১ম", "ফিকহ ২য়", "আরবি ১ম", "আরবি ২য়", "ইসলামের ইতিহাস", "বাংলা", "ইংরেজি", "তথ্য ও যোগাযোগ প্রযুক্তি (ICT)", "পদার্থবিজ্ঞান", "রসায়ন", "উচ্চতর গণিত", "জীববিজ্ঞান", "বালাগত ও মানতিক"
+    ]
+  },
+
+  "ভোকেশনাল/পলিটেকনিক": {
+    "এসএসসি ভোকেশনাল (৯ম - ১০ম)": [
+      "সকল বিষয়", "ট্রেড-১", "ট্রেড-২", "গণিত", "ইংরেজি", "বাংলা", "ধর্ম ও নৈতিক শিক্ষা", "পদার্থবিজ্ঞান", "রসায়ন", "কম্পিউটার অ্যাপ্লিকেশন", "আত্মকর্মসংস্থান ও ব্যবসায় উদ্যোগ", "ড্রয়িং"
+    ],
+    "এইচএসসি ভোকেশনাল/বিএম (১১শ - ১২শ)": [
+      "সকল বিষয়", "কম্পিউটার অফিস অ্যাপ্লিকেশন", "হিসাববিজ্ঞান নীতি ও প্রয়োগ", "ফিন্যান্স ব্যাংকিং ও বিমা", "মার্কেটিং নীতি ও প্রয়োগ", "উদ্যোক্তা উন্নয়ন", "বাংলা", "ইংরেজি", "গণিত", "তথ্য ও যোগাযোগ প্রযুক্তি (ICT)"
+    ]
+  }
+};
+
+// Helper functions for the frontend (cascading: Medium -> Class Group -> Subjects,
+// same pattern as District -> Area in areas-data.js)
+
+// Dropdown 1 options
+function getMediums() {
+  return Object.keys(SUBJECTS_DATA);
+}
+
+// Dropdown 2 options — dynamically populated based on the selected Medium
+function getClassGroupsForMedium(medium) {
+  if (SUBJECTS_DATA[medium]) {
+    return Object.keys(SUBJECTS_DATA[medium]);
+  }
+  return [];
+}
+
+// Dropdown 3 / chip picker options — dynamically populated based on the selected Class Group
+function getSubjectsForClass(medium, classGroup) {
+  if (SUBJECTS_DATA[medium] && SUBJECTS_DATA[medium][classGroup]) {
+    return SUBJECTS_DATA[medium][classGroup];
+  }
+  return [];
+}
