@@ -227,6 +227,18 @@ h1, h2, .display {
 .step-panel.active { display: block; animation: fadeIn 0.25s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
+/* ============ One-page form sub-section dividers (গার্ডিয়ান ফর্ম) ============ */
+.form-subhead {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 26px 0 14px;
+    padding-left: 10px;
+    border-left: 4px solid var(--color-primary-bright);
+    line-height: 1.3;
+}
+.form-subhead:first-of-type { margin-top: 4px; }
+
 /* ============ Form elements ============ */
 .form-group { margin-bottom: 16px; }
 label {
@@ -264,6 +276,63 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .checkbox-item input { margin-right: 7px; cursor: pointer; }
 .checkbox-item.disabled { opacity: 0.45; cursor: not-allowed; }
+
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-item {
+    display: flex; align-items: center; font-size: 13.5px;
+    background: var(--color-bg); padding: 8px 13px; border-radius: 999px;
+    border: 1.5px solid var(--color-line); cursor: pointer; user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.chip-item input { position: absolute; opacity: 0; width: 0; height: 0; }
+.chip-item:has(input:checked), .chip-item.chip-selected {
+    background: var(--color-primary); border-color: var(--color-primary); color: #fff; font-weight: 600;
+}
+.chip-item.disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ============ Area picker (multi-select, searchable — টিচার ফর্ম) ============ */
+.area-picker {
+    position: relative;
+    border: 1.5px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    padding: 8px 10px;
+    transition: border-color 0.15s ease;
+}
+.area-picker:focus-within { border-color: var(--color-accent); outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.area-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.area-chips:not(:empty) { margin-bottom: 8px; }
+.area-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--color-accent); color: #fff;
+    padding: 6px 8px 6px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; line-height: 1.2;
+}
+.area-chip button {
+    background: rgba(255,255,255,0.18); border: none; color: #fff;
+    width: 18px; height: 18px; border-radius: 50%;
+    font-size: 13px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    flex-shrink: 0;
+}
+.area-chip button:hover { background: rgba(255,255,255,0.32); }
+.area-picker input[type="text"] {
+    border: none; background: transparent; padding: 6px 4px;
+    width: 100%; font-size: 14.5px;
+}
+.area-picker input[type="text"]:focus { outline: none; border: none; }
+.area-picker input[type="text"]:disabled { cursor: not-allowed; }
+.area-dropdown {
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+    background: var(--color-surface); border: 1.5px solid var(--color-line);
+    border-radius: var(--radius-sm); box-shadow: var(--shadow-card);
+    max-height: 240px; overflow-y: auto; z-index: 30; display: none;
+}
+.area-dropdown.open { display: block; }
+.area-dropdown-item { padding: 11px 14px; font-size: 14px; cursor: pointer; }
+.area-dropdown-item:hover, .area-dropdown-item.highlight { background: var(--color-accent-soft); }
+.area-dropdown-item.other-option { color: var(--color-accent); font-weight: 700; border-top: 1px solid var(--color-line); }
+.area-dropdown-empty { padding: 11px 14px; font-size: 13px; color: var(--color-ink-soft); }
 
 .student-box {
     background: var(--color-bg);
@@ -421,3 +490,44 @@ textarea { resize: vertical; min-height: 80px; }
     color: var(--color-ink-soft);
     line-height: 1.7;
 }
+
+/* ============================================================
+   টিচার-সাইড scoped ব্র্যান্ড ওভাররাইড (কালো accent)
+   নিচের কম্পোনেন্টগুলো শুধু #teacherFlow / #teacherSummarySection-এ
+   থাকে, কিন্তু মূল রুলগুলো গ্লোবাল হওয়ায় গার্ডিয়ানের সবুজ "লিক" করে
+   ঢুকে পড়ছিল — এখানে ওভাররাইড করে টিচারের ব্র্যান্ড-কালো বসানো হলো
+============================================================ */
+#teacherFlow .section-title,
+#teacherSummarySection .section-title {
+    color: var(--color-accent);
+}
+
+#teacherProgressTrack .progress-step.active::before,
+#teacherProgressTrack .progress-step.done::before {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+}
+#teacherProgressTrack .progress-step.active { color: var(--color-accent); }
+
+#teacherFlow input:focus,
+#teacherFlow select:focus,
+#teacherFlow textarea:focus,
+#teacherFlow button:focus,
+#teacherSummarySection button:focus {
+    border-color: var(--color-accent);
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+#teacherFlow .area-picker input[type="text"]:focus {
+    border: none;
+    outline: none;
+}
+
+#teacherFlow .upload-status.ok { color: var(--color-accent); }
+
+#teacherFlow .faq-item summary::after { color: var(--color-accent); }
+
+#teacherSummarySection .summary-content {
+    background: var(--color-accent-soft);
+}
+#teacherSummarySection .celebrate-title { color: var(--color-accent); }
