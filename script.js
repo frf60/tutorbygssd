@@ -30,28 +30,18 @@ roleTabs.forEach(tab => {
 });
 
 /* ============================================================
-   GUARDIAN WIZARD — Step Navigation
+   GUARDIAN FORM — Validation (single-step form, whole form at once)
 ============================================================ */
-const stepPanels = document.querySelectorAll('#guardianFlow .step-panel');
-const progressSteps = document.querySelectorAll('.progress-step');
-
-function goToStep(stepNum) {
-    stepPanels.forEach(panel => {
-        panel.classList.toggle('active', panel.dataset.step === String(stepNum));
-    });
-    // দ্রষ্টব্য: data-step-এ বাংলা সংখ্যা থাকলে Number() ভুল ফলাফল দেয় (NaN),
-    // তাই টেক্সট পার্স না করে সিরিয়াল পজিশন (index) দিয়ে হিসেব করা হচ্ছে
-    progressSteps.forEach((step, idx) => {
-        const n = idx + 1;
-        step.classList.toggle('active', n === stepNum);
-        step.classList.toggle('done', n < stepNum);
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function validateStep(stepPanel) {
-    const inputs = stepPanel.querySelectorAll('input[required], select[required], textarea[required]');
+function validateStep(scopeEl) {
+    const inputs = scopeEl.querySelectorAll('input[required], select[required], textarea[required]');
     for (const input of inputs) {
+        // রেডিও/চেকবক্স গ্রুপে একটাতে required থাকলেই যথেষ্ট — গ্রুপের কোনো একটা checked থাকলে বাকিগুলোর
+        // নেটিভ validity মেসেজ (যেমন প্রথম রেডিওতে) আটকাবে না
+        if ((input.type === 'radio' || input.type === 'checkbox') && input.name) {
+            const group = scopeEl.querySelectorAll(`input[name="${input.name}"]`);
+            const anyChecked = Array.from(group).some(el => el.checked);
+            if (anyChecked) continue;
+        }
         if (!input.checkValidity()) {
             input.reportValidity();
             return false;
@@ -60,92 +50,97 @@ function validateStep(stepPanel) {
     return true;
 }
 
-document.querySelectorAll('[data-next]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const currentPanel = btn.closest('.step-panel');
-        if (!validateStep(currentPanel)) return;
-        goToStep(Number(btn.dataset.next));
-        saveDraft();
-    });
-});
-
-document.querySelectorAll('[data-back]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        goToStep(Number(btn.dataset.back));
-        saveDraft();
-    });
-});
-
 /* ============================================================
-   DYNAMIC STUDENT FIELDS (guardian step 2)
+   DYNAMIC STUDENT FIELDS (শিক্ষার্থীর তথ্য)
 ============================================================ */
 const studentCountSelect = document.getElementById('studentCount');
 const dynamicStudentsDiv = document.getElementById('dynamicStudents');
 
-const classesOptions = `
-    <option value="প্রি স্কুল">প্রি স্কুল</option><option value="লোয়ার কেজি">লোয়ার কেজি</option>
-    <option value="কেজি/নার্সারি">কেজি/নার্সারি</option><option value="আপার কেজি">আপার কেজি</option>
-    <option value="ওয়ান">ওয়ান</option><option value="টু">টু</option><option value="থ্রি">থ্রি</option>
-    <option value="ফোর">ফোর</option><option value="ফাইভ">ফাইভ</option><option value="সিক্স">সিক্স</option>
-    <option value="সেভেন">সেভেন</option><option value="এইট">এইট</option><option value="নাইন">নাইন</option>
-    <option value="টেন">টেন</option><option value="এসএসসি পরীক্ষার্থী">এসএসসি পরীক্ষার্থী</option>
-    <option value="একাদশ">একাদশ</option><option value="দ্বাদশ">দ্বাদশ</option>
-    <option value="এইচএসসি পরীক্ষার্থী">এইচএসসি পরীক্ষার্থী</option><option value="এডমিশন প্রিপারেশন">এডমিশন প্রিপারেশন</option>
-`;
-const mediumsOptions = `
-    <option value="বাংলা মিডিয়াম (BM)">বাংলা মিডিয়াম (BM)</option>
-    <option value="ইংলিশ মিডিয়াম (EM)">ইংলিশ মিডিয়াম (EM)</option>
-    <option value="ইংলিশ ভার্সন (NC)">ইংলিশ ভার্সন (NC)</option>
-    <option value="মাদ্রাসা">মাদ্রাসা</option>
-    <option value="ভোকেশনাল/পলিটেকনিক">ভোকেশনাল/পলিটেকনিক</option>
-`;
-const higherClasses = ['নাইন', 'টেন', 'এসএসসি পরীক্ষার্থী', 'একাদশ', 'দ্বাদশ', 'এইচএসসি পরীক্ষার্থী', 'এডমিশন প্রিপারেশন'];
+// মিডিয়াম ড্রপডাউনের অপশন — subjects-data.js এর SUBJECTS_DATA থেকে
+const mediumsOptions = getMediums()
+    .map(m => `<option value="${m}">${m}</option>`)
+    .join('');
 
+// মিডিয়াম বদলালে সেই ছাত্রের ক্লাস (ক্লাস-গ্রুপ) ড্রপডাউন রিফ্রেশ হবে, বিষয় রিসেট হবে
+window.handleMediumChange = function(selectElement, index) {
+    const box = document.querySelector(`.student-box[data-index="${index}"]`);
+    const classSelect = box.querySelector('.s-class');
+    const subjectsWrap = box.querySelector('.s-subjects-wrap');
+
+    const groups = getClassGroupsForMedium(selectElement.value);
+    classSelect.innerHTML = '<option value="" disabled selected>ক্লাস নির্বাচন করুন</option>' +
+        groups.map(g => `<option value="${g}">${g}</option>`).join('');
+    classSelect.disabled = false;
+
+    subjectsWrap.innerHTML = '<p class="hint">আগে ক্লাস নির্বাচন করুন</p>';
+};
+
+// ক্লাস (ক্লাস-গ্রুপ) বদলালে সেই ছাত্রের বিষয়ের চিপ-লিস্ট রিফ্রেশ হবে
 window.handleClassChange = function(selectElement, index) {
-    const container = document.getElementById(`group-container-${index}`);
-    const groupSelect = container.querySelector('.s-group');
-    if (higherClasses.includes(selectElement.value)) {
-        container.style.display = 'block';
-        groupSelect.setAttribute('required', 'true');
-    } else {
-        container.style.display = 'none';
-        groupSelect.removeAttribute('required');
-        groupSelect.value = '';
+    const box = document.querySelector(`.student-box[data-index="${index}"]`);
+    const mediumSelect = box.querySelector('.s-medium');
+    const subjectsWrap = box.querySelector('.s-subjects-wrap');
+
+    const subjects = getSubjectsForClass(mediumSelect.value, selectElement.value);
+    if (!subjects.length) {
+        subjectsWrap.innerHTML = '<p class="hint">এই ক্লাসের জন্য কোনো বিষয় পাওয়া যায়নি</p>';
+        return;
     }
+    subjectsWrap.innerHTML = `<div class="chip-group">` +
+        subjects.map((subj, si) => `
+            <label class="chip-item">
+                <input type="checkbox" class="s-subject-cb" value="${subj}" onchange="handleSubjectChipChange(${index})" id="subj-${index}-${si}">
+                <span>${subj}</span>
+            </label>`).join('') +
+        `</div><input type="hidden" class="s-subjects" required>`;
+};
+
+// "সকল বিষয়" (বা "All Subjects") টিক দিলে বাকি সব বিষয় নিষ্ক্রিয় হয়ে যাবে (একসাথে সিলেক্ট করার দরকার নেই)
+window.handleSubjectChipChange = function(index) {
+    const box = document.querySelector(`.student-box[data-index="${index}"]`);
+    const checkboxes = box.querySelectorAll('.s-subject-cb');
+    const allSubjectsCb = Array.from(checkboxes).find(cb => cb.value === 'সকল বিষয়' || cb.value === 'All Subjects');
+
+    checkboxes.forEach(cb => {
+        if (allSubjectsCb && allSubjectsCb.checked && cb !== allSubjectsCb) {
+            cb.checked = false;
+            cb.disabled = true;
+            cb.closest('.chip-item').classList.add('disabled');
+        } else {
+            cb.disabled = false;
+            cb.closest('.chip-item').classList.remove('disabled');
+        }
+        cb.closest('.chip-item').classList.toggle('chip-selected', cb.checked);
+    });
+
+    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    box.querySelector('.s-subjects').value = selected.join(', ');
 };
 
 function renderStudentFields(count) {
     let html = '';
     for (let i = 1; i <= count; i++) {
         html += `
-        <div class="student-box">
+        <div class="student-box" data-index="${i-1}">
             <h4>শিক্ষার্থী ${i} এর তথ্য</h4>
             <div class="form-group">
                 <label>মিডিয়াম</label>
-                <select class="s-medium" required>
+                <select class="s-medium" required onchange="handleMediumChange(this, ${i-1})">
                     <option value="" disabled selected>মিডিয়াম নির্বাচন করুন</option>
                     ${mediumsOptions}
                 </select>
             </div>
             <div class="form-group">
                 <label>ক্লাস</label>
-                <select class="s-class" required onchange="handleClassChange(this, ${i-1})">
-                    <option value="" disabled selected>ক্লাস নির্বাচন করুন</option>
-                    ${classesOptions}
-                </select>
-            </div>
-            <div class="form-group" id="group-container-${i-1}" style="display: none;">
-                <label>গ্রুপ</label>
-                <select class="s-group">
-                    <option value="" disabled selected>গ্রুপ নির্বাচন করুন</option>
-                    <option value="বিজ্ঞান (Science)">বিজ্ঞান (Science)</option>
-                    <option value="ব্যবসা শিক্ষা (Commerce)">ব্যবসা শিক্ষা (Commerce)</option>
-                    <option value="মানবিক (Arts)">মানবিক (Arts)</option>
+                <select class="s-class" required disabled onchange="handleClassChange(this, ${i-1})">
+                    <option value="" disabled selected>আগে মিডিয়াম নির্বাচন করুন</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>বিষয়</label>
-                <textarea class="s-subjects" maxlength="2000" placeholder="বিষয়গুলো লিখুন..." required></textarea>
+                <div class="s-subjects-wrap">
+                    <p class="hint">আগে মিডিয়াম ও ক্লাস নির্বাচন করুন</p>
+                </div>
             </div>
         </div>`;
     }
@@ -154,6 +149,46 @@ function renderStudentFields(count) {
 studentCountSelect.addEventListener('change', (e) => renderStudentFields(e.target.value));
 renderStudentFields(1);
 restoreDraft();
+
+/* ============================================================
+   জেলা → এরিয়া কাসকেডিং (areas-data.js ব্যবহার করে)
+============================================================ */
+const DISTRICT_KEY_MAP = {
+    'চট্টগ্রাম': 'Chattogram', 'ফেনী': 'Feni', 'কুমিল্লা': 'Cumilla', 'চাঁদপুর': 'Chandpur',
+    'নোয়াখালী': 'Noakhali', 'লক্ষ্মীপুর': 'Lakshmipur', 'কক্সবাজার': "Cox's Bazar",
+    'খাগড়াছড়ি': 'Khagrachari', 'রাঙামাটি': 'Rangamati', 'বান্দরবান': 'Bandarban',
+    'ব্রাহ্মণবাড়িয়া': 'Brahmanbaria'
+};
+
+const districtSelect = document.getElementById('district');
+const areaSelect = document.getElementById('area');
+const otherAreaGroup = document.getElementById('otherAreaGroup');
+const otherAreaText = document.getElementById('otherAreaText');
+
+districtSelect.addEventListener('change', () => {
+    const key = DISTRICT_KEY_MAP[districtSelect.value];
+    const areas = (typeof AREAS_BY_DISTRICT !== 'undefined' && AREAS_BY_DISTRICT[key]) ? AREAS_BY_DISTRICT[key] : [];
+
+    areaSelect.innerHTML = '<option value="" disabled selected>এরিয়া নির্বাচন করুন</option>' +
+        areas.map(a => `<option value="${a}">${a}</option>`).join('') +
+        '<option value="অন্যান্য">অন্যান্য (তালিকায় নেই)</option>';
+    areaSelect.disabled = false;
+
+    otherAreaGroup.style.display = 'none';
+    otherAreaText.removeAttribute('required');
+    otherAreaText.value = '';
+});
+
+areaSelect.addEventListener('change', () => {
+    if (areaSelect.value === 'অন্যান্য') {
+        otherAreaGroup.style.display = 'block';
+        otherAreaText.setAttribute('required', 'true');
+    } else {
+        otherAreaGroup.style.display = 'none';
+        otherAreaText.removeAttribute('required');
+        otherAreaText.value = '';
+    }
+});
 
 /* ============================================================
    TIME CHECKBOXES (guardian step 3)
@@ -203,26 +238,24 @@ const DRAFT_KEY = 'guardianDraft_v1';
 
 function collectDraftData() {
     const timeArr = Array.from(document.querySelectorAll('input[name="time"]:checked')).map(cb => cb.value);
+    const durationChecked = document.querySelector('input[name="duration"]:checked');
     const students = Array.from(document.querySelectorAll('.student-box')).map(box => ({
         medium: box.querySelector('.s-medium')?.value || '',
         cls: box.querySelector('.s-class')?.value || '',
-        group: box.querySelector('.s-group')?.value || '',
         subjects: box.querySelector('.s-subjects')?.value || ''
     }));
-    const currentStep = document.querySelector('#guardianFlow .step-panel.active')?.dataset.step || '1';
 
     return {
-        step: currentStep,
         district: document.getElementById('district').value,
         phone: document.getElementById('phone').value,
+        area: areaSelect.value,
+        otherArea: otherAreaText.value,
         address: document.getElementById('address').value,
         teacherGender: document.getElementById('teacherGender').value,
-        preferredDegree: document.getElementById('preferred_degree').value,
-        preferredInstitution: document.getElementById('preferred_institution').value,
         studentCount: document.getElementById('studentCount').value,
         students,
         days: document.getElementById('days').value,
-        duration: document.getElementById('duration').value,
+        duration: durationChecked ? durationChecked.value : '',
         time: timeArr,
         salary: document.getElementById('salary').value,
         specialReq: document.getElementById('specialReq').value
@@ -254,15 +287,26 @@ function restoreDraft() {
     if (!wantsRestore) { clearDraft(); return; }
 
     document.getElementById('district').value = saved.district || '';
+    if (saved.district) {
+        districtSelect.dispatchEvent(new Event('change'));
+        areaSelect.value = saved.area || '';
+        if (saved.area === 'অন্যান্য') {
+            otherAreaGroup.style.display = 'block';
+            otherAreaText.setAttribute('required', 'true');
+            otherAreaText.value = saved.otherArea || '';
+        }
+    }
     document.getElementById('phone').value = saved.phone || '';
     document.getElementById('address').value = saved.address || '';
     document.getElementById('teacherGender').value = saved.teacherGender || '';
-    document.getElementById('preferred_degree').value = saved.preferredDegree || '';
-    document.getElementById('preferred_institution').value = saved.preferredInstitution || '';
     document.getElementById('days').value = saved.days || '';
-    document.getElementById('duration').value = saved.duration || '';
     document.getElementById('salary').value = saved.salary || '';
     document.getElementById('specialReq').value = saved.specialReq || '';
+
+    if (saved.duration) {
+        const durationRadio = document.querySelector(`input[name="duration"][value="${saved.duration}"]`);
+        if (durationRadio) durationRadio.checked = true;
+    }
 
     if (saved.time && saved.time.length) {
         document.querySelectorAll('input[name="time"]').forEach(cb => {
@@ -278,18 +322,25 @@ function restoreDraft() {
             (saved.students || []).forEach((s, i) => {
                 if (!boxes[i]) return;
                 const mediumEl = boxes[i].querySelector('.s-medium');
+                if (mediumEl && s.medium) {
+                    mediumEl.value = s.medium;
+                    handleMediumChange(mediumEl, i);
+                }
                 const classEl = boxes[i].querySelector('.s-class');
-                const groupEl = boxes[i].querySelector('.s-group');
-                const subjEl = boxes[i].querySelector('.s-subjects');
-                if (mediumEl) mediumEl.value = s.medium;
-                if (classEl) { classEl.value = s.cls; handleClassChange(classEl, i); }
-                if (groupEl) groupEl.value = s.group;
-                if (subjEl) subjEl.value = s.subjects;
+                if (classEl && s.cls) {
+                    classEl.value = s.cls;
+                    handleClassChange(classEl, i);
+                }
+                if (s.subjects) {
+                    const subjArr = s.subjects.split(', ');
+                    boxes[i].querySelectorAll('.s-subject-cb').forEach(cb => {
+                        if (subjArr.includes(cb.value)) cb.checked = true;
+                    });
+                    handleSubjectChipChange(i);
+                }
             });
         }, 0);
     }
-
-    goToStep(Number(saved.step) || 1);
 }
 
 // প্রতিটা ধাপ পরিবর্তনের সময় ও ফর্মে যেকোনো ইনপুটের সময় ড্রাফট সেভ হবে
@@ -313,20 +364,21 @@ checkBtn.addEventListener('click', () => {
     const honeypot = document.getElementById('website');
     if (honeypot && honeypot.value) { console.warn('Spam blocked.'); return; }
 
-    const step3Panel = document.querySelector('#guardianFlow .step-panel[data-step="3"]');
-    if (!validateStep(step3Panel)) return;
+    const guardianFormEl = document.getElementById('guardianForm');
+    if (!validateStep(guardianFormEl)) return;
 
     const district = document.getElementById('district').value;
     const phone = document.getElementById('phone').value;
+    const area = (areaSelect.value === 'অন্যান্য') ? otherAreaText.value.trim() : areaSelect.value;
     const address = document.getElementById('address').value;
     const teacherGender = document.getElementById('teacherGender').value;
-    const preferredDegree = document.getElementById('preferred_degree').value;
-    const preferredInstitution = document.getElementById('preferred_institution').value;
     const studentCount = document.getElementById('studentCount').value;
     const days = document.getElementById('days').value;
-    const duration = document.getElementById('duration').value;
     const salary = document.getElementById('salary').value;
     const specialReq = document.getElementById('specialReq').value;
+
+    const durationChecked = document.querySelector('input[name="duration"]:checked');
+    const duration = durationChecked ? durationChecked.value : '';
 
     const checkedTimes = document.querySelectorAll('input[name="time"]:checked');
     const timeArr = Array.from(checkedTimes).map(cb => cb.value);
@@ -337,8 +389,16 @@ checkBtn.addEventListener('click', () => {
         alert('অনুগ্রহ করে সঠিক মোবাইল নাম্বার দিন (উদা: 01xxxxxxxxx)।');
         return;
     }
+    if (!area) {
+        alert('অনুগ্রহ করে এরিয়া নির্বাচন করুন (তালিকায় না থাকলে "অন্যান্য" দিয়ে লিখুন)।');
+        return;
+    }
     if (timeArr.length === 0) {
         alert('অনুগ্রহ করে পড়ানোর সময় নির্বাচন করুন।');
+        return;
+    }
+    if (!duration) {
+        alert('অনুগ্রহ করে ক্লাসের সময়কাল নির্বাচন করুন।');
         return;
     }
 
@@ -346,41 +406,31 @@ checkBtn.addEventListener('click', () => {
     const studentClassesRaw = []; // পোস্ট-জেনারেশন ও ম্যাচিং-এর জন্য আলাদা রাখা (regex পার্সিং এড়াতে)
     const studentSubjectsRaw = [];
     const studentMediumsRaw = [];
-    const studentGroupsRaw = [];
     const sMediums = document.querySelectorAll('.s-medium');
     const sClasses = document.querySelectorAll('.s-class');
-    const sGroups = document.querySelectorAll('.s-group');
     const sSubjects = document.querySelectorAll('.s-subjects');
 
     for (let i = 0; i < studentCount; i++) {
         if (!sMediums[i].value || !sClasses[i].value || !sSubjects[i].value) {
-            alert(`অনুগ্রহ করে শিক্ষার্থী ${i+1} এর সম্পূর্ণ তথ্য দিন।`);
+            alert(`অনুগ্রহ করে শিক্ষার্থী ${i+1} এর সম্পূর্ণ তথ্য দিন (মিডিয়াম, ক্লাস ও অন্তত একটা বিষয়)।`);
             return;
         }
-        let groupTextStr = "", groupTextSheet = "";
-        if (higherClasses.includes(sClasses[i].value)) {
-            if (!sGroups[i].value) { alert(`অনুগ্রহ করে শিক্ষার্থী ${i+1} এর গ্রুপ নির্বাচন করুন।`); return; }
-            groupTextStr = `, গ্রুপ: ${sGroups[i].value}`;
-            groupTextSheet = ` [Group: ${sGroups[i].value}]`;
-        }
-        studentDetailsText += `[শিক্ষার্থী ${i+1}] ক্লাস: ${sClasses[i].value}${groupTextStr}, মিডিয়াম: ${sMediums[i].value}\nবিষয়: ${sSubjects[i].value}\n`;
-        studentDetailsForSheet += `Student ${i+1}: Class ${sClasses[i].value}${groupTextSheet} (${sMediums[i].value}), Subjects: ${sSubjects[i].value} | `;
+        studentDetailsText += `[শিক্ষার্থী ${i+1}] ক্লাস: ${sClasses[i].value}, মিডিয়াম: ${sMediums[i].value}\nবিষয়: ${sSubjects[i].value}\n`;
+        studentDetailsForSheet += `Student ${i+1}: Class ${sClasses[i].value} (${sMediums[i].value}), Subjects: ${sSubjects[i].value} | `;
         studentClassesRaw.push(sClasses[i].value);
         studentSubjectsRaw.push(sSubjects[i].value);
         studentMediumsRaw.push(sMediums[i].value);
-        if (sGroups[i].value) studentGroupsRaw.push(sGroups[i].value);
     }
 
-    finalMessage = `Location: ${district}\nAddress: ${address}\nPhone: ${phone}\n\nTeacher Required: ${teacherGender}\n\n-- Student Information --\nTotal Students: ${studentCount}\n${studentDetailsText}\n-- Schedule & Remuneration --\nDays: ${days}\nTime: ${timeStr}\nDuration: ${duration}\nSalary: ${salary}`;
-    if (specialReq) finalMessage += `\nSpecial Requirements: ${specialReq}`;
+    finalMessage = `Location: ${district}, ${area}\nAddress: ${address}\nPhone: ${phone}\n\nTeacher Required: ${teacherGender}\n\n-- Student Information --\nTotal Students: ${studentCount}\n${studentDetailsText}\n-- Schedule & Remuneration --\nDays: ${days}\nDuration: ${duration}\nTime: ${timeStr}\nSalary: ${salary}`;
+    if (specialReq) finalMessage += `\nOther Info: ${specialReq}`;
 
     formDataObj = {
         formType: 'guardian',
-        District: district, Phone: phone, Address: address, Teacher_Gender: teacherGender,
-        Preferred_Degree: preferredDegree, Preferred_Institution: preferredInstitution,
+        District: district, Area: area, Phone: phone, Address: address, Teacher_Gender: teacherGender,
         Student_Count: studentCount, Student_Details: studentDetailsForSheet,
         Student_Classes: studentClassesRaw.join(','), Student_Subjects: studentSubjectsRaw.join(' | '),
-        Student_Mediums: studentMediumsRaw.join(','), Student_Groups: studentGroupsRaw.join(','),
+        Student_Mediums: studentMediumsRaw.join(','),
         Days: days, Duration: duration, Time: timeStr, Salary: salary, Special_Requirements: specialReq
     };
 
@@ -447,6 +497,7 @@ document.querySelectorAll('[data-tnext]').forEach(btn => {
     btn.addEventListener('click', () => {
         const currentPanel = btn.closest('.step-panel');
         if (!validateStep(currentPanel)) return;
+        if (currentPanel.dataset.tstep === '1' && !tValidateAreas()) return;
         goToTeacherStep(Number(btn.dataset.tnext));
         teacherSaveDraft();
     });
@@ -513,11 +564,133 @@ function updateSecondDocLabel() {
 }
 tStatusSelect.addEventListener('change', updateSecondDocLabel);
 
+/* ============================================================
+   জেলা → এরিয়া (মাল্টি-সিলেক্ট, সার্চেবল চিপ পিকার) — টিচার ফর্ম
+============================================================ */
+const tTargetDistrictSelect = document.getElementById('t_target_district');
+const tAreasPicker = document.getElementById('t_areas_picker');
+const tAreasChips = document.getElementById('t_areas_chips');
+const tAreasSearch = document.getElementById('t_areas_search');
+const tAreasDropdown = document.getElementById('t_areas_dropdown');
+const tOtherAreaGroup = document.getElementById('t_otherAreaGroup');
+const tOtherAreaText = document.getElementById('t_otherAreaText');
+
+let tSelectedAreas = [];
+
+function tCurrentDistrictKey() {
+    return DISTRICT_KEY_MAP[tTargetDistrictSelect.value];
+}
+
+function tRenderAreaChips() {
+    tAreasChips.innerHTML = tSelectedAreas.map(area => `
+        <span class="area-chip" data-area="${area}">
+            ${area}
+            <button type="button" aria-label="বাদ দিন">×</button>
+        </span>
+    `).join('');
+    tAreasChips.querySelectorAll('.area-chip button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const area = btn.closest('.area-chip').dataset.area;
+            tSelectedAreas = tSelectedAreas.filter(a => a !== area);
+            tRenderAreaChips();
+            tRenderAreaDropdown(tAreasSearch.value);
+        });
+    });
+}
+
+function tSelectArea(area) {
+    if (!tSelectedAreas.includes(area)) tSelectedAreas.push(area);
+    tAreasSearch.value = '';
+    tRenderAreaChips();
+    tRenderAreaDropdown('');
+    tAreasSearch.focus();
+    teacherSaveDraft();
+}
+
+function tShowOtherAreaField() {
+    tOtherAreaGroup.style.display = 'block';
+    tOtherAreaText.focus();
+}
+
+function tRenderAreaDropdown(query) {
+    const key = tCurrentDistrictKey();
+    if (!key) { tAreasDropdown.classList.remove('open'); return; }
+
+    const q = (query || '').trim();
+    const matches = (typeof searchAreas === 'function' ? searchAreas(key, q) : [])
+        .filter(a => !tSelectedAreas.includes(a));
+
+    let html = '';
+    if (matches.length === 0 && q === '') {
+        html += `<div class="area-dropdown-empty">সবগুলো এরিয়া বাছাই করা হয়ে গেছে</div>`;
+    } else if (matches.length === 0) {
+        html += `<div class="area-dropdown-empty">কোনো এরিয়া পাওয়া যায়নি</div>`;
+    } else {
+        html += matches.map(a => `<div class="area-dropdown-item" data-area="${a}">${a}</div>`).join('');
+    }
+    html += `<div class="area-dropdown-item other-option" data-other="1">✏️ অন্যান্য (তালিকায় নেই — নিজে লিখুন)</div>`;
+    tAreasDropdown.innerHTML = html;
+
+    tAreasDropdown.querySelectorAll('.area-dropdown-item[data-area]').forEach(item => {
+        item.addEventListener('click', () => tSelectArea(item.dataset.area));
+    });
+    const otherItem = tAreasDropdown.querySelector('.area-dropdown-item[data-other]');
+    if (otherItem) {
+        otherItem.addEventListener('click', () => {
+            tShowOtherAreaField();
+            tAreasDropdown.classList.remove('open');
+        });
+    }
+    tAreasDropdown.classList.add('open');
+}
+
+function tHandleDistrictChange(silent) {
+    const key = tCurrentDistrictKey();
+    const districtChosen = !!tTargetDistrictSelect.value;
+    tSelectedAreas = [];
+    tRenderAreaChips();
+    tOtherAreaGroup.style.display = 'none';
+    tOtherAreaText.value = '';
+    tAreasSearch.value = '';
+    tAreasDropdown.classList.remove('open');
+
+    if (key) {
+        tAreasSearch.disabled = false;
+        tAreasSearch.placeholder = 'এরিয়া খুঁজুন (ঐচ্ছিক) — অথবা স্ক্রল করে বাছাই করুন';
+        if (!silent) tRenderAreaDropdown('');
+    } else if (districtChosen) {
+        // এই জেলার canonical এরিয়া-লিস্ট এখনো নেই — সরাসরি ফ্রি-টেক্সটে যেতে হবে
+        tAreasSearch.disabled = true;
+        tAreasSearch.placeholder = 'এই জেলার এরিয়া তালিকা এখনো যোগ করা হয়নি';
+        tOtherAreaGroup.style.display = 'block';
+        if (!silent) tOtherAreaText.focus();
+    } else {
+        tAreasSearch.disabled = true;
+        tAreasSearch.placeholder = 'আগে জেলা নির্বাচন করুন';
+    }
+}
+tTargetDistrictSelect.addEventListener('change', () => tHandleDistrictChange(false));
+
+tAreasSearch.addEventListener('focus', () => tRenderAreaDropdown(tAreasSearch.value));
+tAreasSearch.addEventListener('input', () => tRenderAreaDropdown(tAreasSearch.value));
+document.addEventListener('click', (e) => {
+    if (!tAreasPicker.contains(e.target)) tAreasDropdown.classList.remove('open');
+});
+
+function tValidateAreas() {
+    if (tSelectedAreas.length === 0 && tOtherAreaText.value.trim() === '') {
+        alert('অনুগ্রহ করে অন্তত একটা এলাকা নির্বাচন করুন অথবা "অন্যান্য" তে লিখুন।');
+        tAreasSearch.focus();
+        return false;
+    }
+    return true;
+}
+
 /* ---- Draft auto-save (টিচার) ---- */
 const T_DRAFT_KEY = 'teacherDraft_v1';
 const T_TEXT_FIELD_IDS = [
     't_name', 't_gender', 't_phone', 't_altphone', 't_target_district', 't_address',
-    't_permanent_address', 't_locations', 't_status', 't_department', 't_session',
+    't_otherAreaText', 't_status', 't_department', 't_session',
     't_institution', 't_institution_type', 't_degree_type', 't_ssc_group', 't_ssc_result',
     't_ssc_school', 't_hsc_group', 't_hsc_result', 't_hsc_college', 't_subjects', 't_experience_years'
 ];
@@ -529,6 +702,7 @@ function teacherCollectDraftData() {
     T_CHECKBOX_GROUPS.forEach(name => {
         data[name] = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
     });
+    data.t_areas = tSelectedAreas;
     return data;
 }
 function teacherSaveDraft() {
@@ -559,6 +733,20 @@ function teacherRestoreDraft() {
             });
         }
     });
+
+    if (tTargetDistrictSelect.value) {
+        tHandleDistrictChange(true);
+        if (saved.t_areas && saved.t_areas.length) {
+            tSelectedAreas = saved.t_areas.slice();
+            tRenderAreaChips();
+        }
+        if (saved.t_otherAreaText) {
+            tOtherAreaText.value = saved.t_otherAreaText;
+            tOtherAreaGroup.style.display = 'block';
+        }
+        tAreasDropdown.classList.remove('open');
+    }
+
     updateSecondDocLabel();
     goToTeacherStep(Number(saved.step) || 1);
 }
@@ -632,8 +820,11 @@ tCheckBtn.addEventListener('click', async () => {
 
         const get = id => document.getElementById(id).value;
         const name = get('t_name'), gender = get('t_gender'), phone = get('t_phone'), altPhone = get('t_altphone');
-        const targetDistrict = get('t_target_district'), address = get('t_address'), permanentAddress = get('t_permanent_address');
-        const locations = get('t_locations'), status = get('t_status');
+        const targetDistrict = get('t_target_district'), address = get('t_address');
+        const areasStr = tSelectedAreas.join(', ');
+        const otherAreasStr = get('t_otherAreaText').trim();
+        const locationsDisplay = [areasStr, otherAreasStr].filter(Boolean).join(', ');
+        const status = get('t_status');
         const department = get('t_department'), session = get('t_session'), institution = get('t_institution');
         const institutionType = get('t_institution_type'), degreeType = get('t_degree_type');
         const sscGroup = get('t_ssc_group'), sscResult = get('t_ssc_result'), sscSchool = get('t_ssc_school');
@@ -644,8 +835,8 @@ tCheckBtn.addEventListener('click', async () => {
         teacherFinalMessage =
             `📋 টিউটর সিভি\n\n` +
             `নাম: ${name}\nজেন্ডার: ${gender}\nফোন: ${phone}${altPhone ? ' / ' + altPhone : ''}\n` +
-            `যে জেলায় টিউশন করাতে চান: ${targetDistrict}\nবর্তমান ঠিকানা: ${address}\nস্থায়ী ঠিকানা: ${permanentAddress}\n` +
-            `টিউশনের এলাকা: ${locations}\nবর্তমান স্ট্যাটাস: ${status}\n\n` +
+            `যে জেলায় টিউশন করাতে চান: ${targetDistrict}\nবর্তমান ঠিকানা: ${address}\n` +
+            `টিউশনের এলাকা: ${locationsDisplay}\nবর্তমান স্ট্যাটাস: ${status}\n\n` +
             `-- শিক্ষাগত যোগ্যতা --\nবিভাগ/সেশন: ${department} / ${session}\nপ্রতিষ্ঠান: ${institution} (${institutionType})\nডিগ্রী: ${degreeType}\n` +
             `এসএসসি: ${sscGroup}, ${sscResult}, ${sscSchool}\nএইচএসসি: ${hscGroup}, ${hscResult}, ${hscCollege}\n\n` +
             `-- পড়ানোর তথ্য --\nসময়: ${tTimeArr.join(', ')}\nশ্রেণি: ${tClassesArr.join(', ')}\nমিডিয়াম: ${tMediumsArr.join(', ')}\n` +
@@ -654,8 +845,8 @@ tCheckBtn.addEventListener('click', async () => {
         teacherFormDataObj = {
             formType: 'teacher',
             Name: name, Gender: gender, Phone: phone, Alt_Phone: altPhone,
-            Target_District: targetDistrict, Address: address, Permanent_Address: permanentAddress,
-            Locations: locations, Current_Status: status,
+            Target_District: targetDistrict, Address: address,
+            Areas: areasStr, Other_Areas: otherAreasStr, Current_Status: status,
             Department: department, Session: session, Institution: institution,
             Institution_Type: institutionType, Degree_Type: degreeType,
             SSC_Group: sscGroup, SSC_Result: sscResult, SSC_School: sscSchool,
