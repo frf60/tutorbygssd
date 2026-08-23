@@ -1,4 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+/* শুধু বাংলা "১" (এক) সংখ্যাটার জন্য আলাদা, স্পষ্ট ফন্ট — Hind Siliguri/Baloo Da 2-এ এই
+   সংখ্যাটা অস্পষ্ট দেখায় বলে শুধু এই একটা গ্লিফের জন্য Noto Sans Bengali থেকে সাবসেট করে আনা
+   হয়েছে (text=১ প্যারামিটার দিয়ে); বাকি সব অক্ষর/সংখ্যা আগের ফন্টেই থাকবে */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&text=%E0%A7%A7&display=swap');
 
 :root {
     /* ব্র্যান্ড লোগো থেকে নেওয়া exact কালার */
@@ -34,7 +38,7 @@
 * { box-sizing: border-box; }
 
 body {
-    font-family: 'Hind Siliguri', 'Segoe UI', sans-serif;
+    font-family: 'Noto Sans Bengali', 'Hind Siliguri', 'Segoe UI', sans-serif;
     background: var(--color-bg);
     color: var(--color-ink);
     margin: 0;
@@ -46,7 +50,7 @@ body {
 }
 
 h1, h2, .display {
-    font-family: 'Baloo Da 2', 'Hind Siliguri', sans-serif;
+    font-family: 'Noto Sans Bengali', 'Baloo Da 2', 'Hind Siliguri', sans-serif;
     font-weight: 700;
 }
 
@@ -188,7 +192,7 @@ h1, h2, .display {
     background: var(--color-surface);
     border: 2px solid var(--color-line);
     margin: 0 auto 2px;
-    font-family: 'Baloo Da 2', sans-serif;
+    font-family: 'Noto Sans Bengali', 'Baloo Da 2', sans-serif;
 }
 .progress-step.active::before,
 .progress-step.done::before {
@@ -267,6 +271,7 @@ input:focus, select:focus, textarea:focus, button:focus, a:focus {
     outline-offset: 1px;
 }
 textarea { resize: vertical; min-height: 80px; }
+#specialReq { min-height: 130px; }
 
 .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
 .checkbox-item {
@@ -339,7 +344,7 @@ textarea { resize: vertical; min-height: 80px; }
     border: 1.5px solid var(--color-line);
     padding: 16px; border-radius: var(--radius-md); margin-bottom: 14px;
 }
-.student-box h4 { margin: 0 0 12px; color: var(--color-primary); font-size: 15.5px; font-family: 'Hind Siliguri'; }
+.student-box h4 { margin: 0 0 12px; color: var(--color-primary); font-size: 15.5px; font-family: 'Noto Sans Bengali', 'Hind Siliguri'; }
 
 /* ============ Buttons ============ */
 .btn {
@@ -438,7 +443,7 @@ textarea { resize: vertical; min-height: 80px; }
     50% { transform: translateY(-5px); }
 }
 .celebrate-title {
-    font-family: 'Baloo Da 2', sans-serif;
+    font-family: 'Noto Sans Bengali', 'Baloo Da 2', sans-serif;
     font-size: 19px;
     color: var(--color-primary);
     margin: 0 0 6px;
