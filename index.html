@@ -236,11 +236,11 @@
                     <label>পড়ানোর সময়</label>
                     <div class="checkbox-group">
                         <label class="checkbox-item" id="lbl-anytime"><input type="checkbox" name="time" value="যেকোনো সময়" id="cb-anytime"> যেকোনো সময়</label>
-                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="সকালে (৫:৩০-১০:৩০ টা)"> সকালে</label>
-                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="দুপুরে (১২:৩০-২:৩০ টা)"> দুপুরে</label>
-                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="বিকালে (২:৩০-মাগরিবের আগে পর্যন্ত)"> বিকালে</label>
-                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="সন্ধায় (মাগরিবের পর - ৮ টা)"> সন্ধায়</label>
-                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="রাতে (৮ - ১০:৩০ টা)"> রাতে</label>
+                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="সকালে"> সকালে</label>
+                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="দুপুরে"> দুপুরে</label>
+                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="বিকালে"> বিকালে</label>
+                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="সন্ধায়"> সন্ধায়</label>
+                        <label class="checkbox-item time-specific"><input type="checkbox" name="time" value="রাতে"> রাতে</label>
                     </div>
                 </div>
                 <div class="form-group">
@@ -258,7 +258,7 @@
                 </div>
                 <div class="form-group">
                     <label for="specialReq">অন্যান্য তথ্য (ঐচ্ছিক)</label>
-                    <textarea id="specialReq" placeholder="টিচার কেমন হলে ভালো হয়, স্টুডেন্ট সম্পর্কে কিছু জানানোর থাকলে, বা অন্য কোনো শর্ত/নির্দেশনা থাকলে এখানে লিখুন..."></textarea>
+                    <textarea id="specialReq" rows="5" placeholder="আপনার কোনো ডিগ্রি/বিষয়/প্রতিষ্ঠানের টিচার আগে থেকে পছন্দ থাকলে এখানে লিখুন। কেমন টিচার চান, স্টুডেন্ট এর কোনো তথ্য বা আপনার কোনো নির্দেশনা/শর্ত থাকলে এখানে জানিয়ে দিন। "></textarea>
                 </div>
 
                 <button type="button" id="checkBtn" class="btn btn-accent">তথ্য যাচাই করুন</button>
@@ -350,7 +350,7 @@
                     <input type="text" id="t_name" required>
                 </div>
                 <div class="form-group">
-                    <label for="t_gender">জেন্ডার</label>
+                    <label for="t_gender">লিঙ্গ</label>
                     <select id="t_gender" required>
                         <option value="" disabled selected>নির্বাচন করুন</option>
                         <option value="পুরুষ">পুরুষ</option>
@@ -514,41 +514,6 @@
             <div class="section step-panel" data-tstep="3">
                 <h2 class="section-title">পড়ানোর তথ্য</h2>
                 <div class="form-group">
-                    <label>পড়ানোর সময় (একাধিক নির্বাচন করা যাবে)</label>
-                    <div class="checkbox-group">
-                        <label class="checkbox-item" id="t-lbl-anytime"><input type="checkbox" name="t_time" value="যেকোনো সময়" id="t-cb-anytime"> যেকোনো সময়</label>
-                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="সকালে (৫:৩০-১০:৩০ টা)"> সকালে</label>
-                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="দুপুরে (১২:৩০-২:৩০ টা)"> দুপুরে</label>
-                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="বিকালে (২:৩০-মাগরিবের আগে পর্যন্ত)"> বিকালে</label>
-                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="সন্ধায় (মাগরিবের পর - ৮ টা)"> সন্ধায়</label>
-                        <label class="checkbox-item t-time-specific"><input type="checkbox" name="t_time" value="রাতে (৮ - ১০:৩০ টা)"> রাতে</label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>যেসব শ্রেণি পড়াতে পারবেন</label>
-                    <div class="checkbox-group" id="t_classes_group">
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="প্রি স্কুল"> প্রি স্কুল</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="লোয়ার কেজি"> লোয়ার কেজি</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="কেজি/নার্সারি"> কেজি/নার্সারি</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="আপার কেজি"> আপার কেজি</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="ওয়ান"> ওয়ান</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="টু"> টু</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="থ্রি"> থ্রি</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="ফোর"> ফোর</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="ফাইভ"> ফাইভ</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="সিক্স"> সিক্স</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="সেভেন"> সেভেন</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এইট"> এইট</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="নাইন"> নাইন</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="টেন"> টেন</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এসএসসি পরীক্ষার্থী"> এসএসসি পরীক্ষার্থী</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="একাদশ"> একাদশ</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="দ্বাদশ"> দ্বাদশ</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এইচএসসি পরীক্ষার্থী"> এইচএসসি পরীক্ষার্থী</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_classes" value="এডমিশন প্রিপারেশন"> এডমিশন প্রিপারেশন</label>
-                    </div>
-                </div>
-                <div class="form-group">
                     <label>যেসব মিডিয়াম পড়াতে পারবেন</label>
                     <div class="checkbox-group">
                         <label class="checkbox-item"><input type="checkbox" name="t_mediums" value="বাংলা মিডিয়াম (BM)"> বাংলা মিডিয়াম</label>
@@ -559,17 +524,11 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>যেসব গ্রুপ পড়াতে পারবেন</label>
-                    <div class="checkbox-group">
-                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="বিজ্ঞান"> বিজ্ঞান</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="ব্যবসা শিক্ষা"> ব্যবসা শিক্ষা</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="মানবিক"> মানবিক</label>
-                        <label class="checkbox-item"><input type="checkbox" name="t_groups" value="মাদ্রাসার আরবি বিষয়গুলো"> মাদ্রাসার আরবি বিষয়গুলো</label>
+                    <label>মিডিয়াম ও ক্লাসভিত্তিক বিষয় নির্বাচন করুন</label>
+                    <div id="t_medium_class_subjects">
+                        <p class="hint">আগে উপর থেকে মিডিয়াম নির্বাচন করুন</p>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="t_subjects">বিষয়সমূহ (কমা দিয়ে লিখুন)</label>
-                    <textarea id="t_subjects" required></textarea>
+                    <input type="hidden" id="t_subjects_by_class_json">
                 </div>
                 <div class="form-group">
                     <label for="t_experience_years">পড়ানোর অভিজ্ঞতা (বছর সংখ্যা)</label>
