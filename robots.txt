@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://your-domain-or-username.github.io/repo-name/sitemap.xml
+Sitemap: https://frf60.github.io/tutorbygssd/sitemap.xml
