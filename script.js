@@ -92,7 +92,14 @@ window.handleClassChange = function(selectElement, index) {
                 <input type="checkbox" class="s-subject-cb" value="${subj}" onchange="handleSubjectChipChange(${index})" id="subj-${index}-${si}">
                 <span>${subj}</span>
             </label>`).join('') +
-        `</div><input type="hidden" class="s-subjects" required>`;
+        `
+            <label class="chip-item">
+                <input type="checkbox" class="s-subject-cb s-other-cb" value="অন্যান্য বিষয়" onchange="handleSubjectChipChange(${index})" id="subj-${index}-other">
+                <span>অন্যান্য বিষয়</span>
+            </label>
+        </div>
+        <input type="text" class="s-other-subject-text" placeholder="বিষয়ের নাম লিখুন" oninput="handleSubjectChipChange(${index})" style="display:none; margin-top:8px;">
+        <input type="hidden" class="s-subjects" required>`;
 };
 
 // "সকল বিষয়" (বা "All Subjects") টিক দিলে বাকি সব বিষয় নিষ্ক্রিয় হয়ে যাবে (একসাথে সিলেক্ট করার দরকার নেই)
@@ -100,6 +107,8 @@ window.handleSubjectChipChange = function(index) {
     const box = document.querySelector(`.student-box[data-index="${index}"]`);
     const checkboxes = box.querySelectorAll('.s-subject-cb');
     const allSubjectsCb = Array.from(checkboxes).find(cb => cb.value === 'সকল বিষয়' || cb.value === 'All Subjects');
+    const otherCb = box.querySelector('.s-other-cb');
+    const otherInput = box.querySelector('.s-other-subject-text');
 
     checkboxes.forEach(cb => {
         if (allSubjectsCb && allSubjectsCb.checked && cb !== allSubjectsCb) {
@@ -113,7 +122,20 @@ window.handleSubjectChipChange = function(index) {
         cb.closest('.chip-item').classList.toggle('chip-selected', cb.checked);
     });
 
-    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    if (otherInput && otherCb) {
+        const showOther = otherCb.checked && !otherCb.disabled;
+        otherInput.style.display = showOther ? 'block' : 'none';
+        otherInput.required = showOther;
+        if (!showOther) otherInput.value = '';
+    }
+
+    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => {
+        if (cb === otherCb) {
+            const customVal = otherInput ? otherInput.value.trim() : '';
+            return customVal || 'অন্যান্য বিষয়';
+        }
+        return cb.value;
+    });
     box.querySelector('.s-subjects').value = selected.join(', ');
 };
 
@@ -333,9 +355,18 @@ function restoreDraft() {
                 }
                 if (s.subjects) {
                     const subjArr = s.subjects.split(', ');
-                    boxes[i].querySelectorAll('.s-subject-cb').forEach(cb => {
+                    const subjectCbs = boxes[i].querySelectorAll('.s-subject-cb');
+                    const knownValues = Array.from(subjectCbs).map(cb => cb.value);
+                    subjectCbs.forEach(cb => {
                         if (subjArr.includes(cb.value)) cb.checked = true;
                     });
+                    const unmatched = subjArr.filter(v => v && !knownValues.includes(v));
+                    const otherCb = boxes[i].querySelector('.s-other-cb');
+                    const otherInput = boxes[i].querySelector('.s-other-subject-text');
+                    if (unmatched.length && otherCb) {
+                        otherCb.checked = true;
+                        if (otherInput) otherInput.value = unmatched.join(', ');
+                    }
                     handleSubjectChipChange(i);
                 }
             });
@@ -509,40 +540,147 @@ document.querySelectorAll('[data-tback]').forEach(btn => {
     });
 });
 
-/* ---- পড়ানোর সময় (t_time) — "যেকোনো সময়" এক্সক্লুসিভ লজিক ---- */
-const tTimeCheckboxes = document.querySelectorAll('input[name="t_time"]');
-const tAnyTimeCb = document.getElementById('t-cb-anytime');
-const tAnyTimeLabel = document.getElementById('t-lbl-anytime');
+/* ============================================================
+   মিডিয়াম → ক্লাস → বিষয় (ক্যাসকেডিং) নির্বাচন — টিচার
+   গার্ডিয়ান ফর্মের মতোই: আগে মিডিয়াম, তারপর সেই মিডিয়ামের নিজস্ব ক্লাস-লিস্ট (getClassGroupsForMedium),
+   তারপর সেই (মিডিয়াম, ক্লাস) জোড়ার নিজস্ব বিষয়-লিস্ট (getSubjectsForClass) — এতে ইংলিশ মিডিয়াম/
+   মাদ্রাসা/ভোকেশনাল-এর ভিন্ন ক্লাস-নামকরণও (Grade 6, দাখিল ৯ম শ্রেণি ইত্যাদি) সঠিকভাবে কাজ করে।
+   একজন টিচার একাধিক মিডিয়াম সিলেক্ট করলে প্রতিটা মিডিয়ামের জন্য আলাদা ক্লাস-লিস্ট দেখাবে,
+   এবং প্রতিটা মিডিয়ামে আলাদাভাবে ক্লাস বেছে সেই ক্লাসের বিষয় বেছে নিতে পারবেন।
+   ডেটা "মিডিয়াম::ক্লাস" — এই কম্পোজিট-কী দিয়ে জমা হয়, যা গার্ডিয়ানের
+   (Student_Mediums[i], Student_Classes[i]) জোড়ার সাথে হুবহু মিলে (matching-এ ব্যবহৃত হয়)।
+============================================================ */
+let tMediumSelectedClasses = {}; // { "বাংলা মিডিয়াম (BM)": ["৯ম শ্রেণি", "১০ম শ্রেণি"], ... }
+let tMediumClassSubjects = {};   // { "বাংলা মিডিয়াম (BM)::৯ম শ্রেণি": ["ইংরেজি", "আর্টস গ্রুপ"], ... }
+let tMediumClassOtherText = {};  // { "বাংলা মিডিয়াম (BM)::৯ম শ্রেণি": "কাস্টম বিষয়ের টেক্সট" }
 
-tTimeCheckboxes.forEach(cb => {
-    cb.addEventListener('change', function() {
-        if (this === tAnyTimeCb && this.checked) {
-            tTimeCheckboxes.forEach(other => {
-                if (other !== tAnyTimeCb) {
-                    other.checked = false;
-                    other.disabled = true;
-                    other.parentElement.classList.add('disabled');
-                }
-            });
-        } else if (this === tAnyTimeCb && !this.checked) {
-            tTimeCheckboxes.forEach(other => {
-                other.disabled = false;
-                other.parentElement.classList.remove('disabled');
-            });
+function tRenderMediumClassSubjects() {
+    const wrap = document.getElementById('t_medium_class_subjects');
+    const mediums = Array.from(document.querySelectorAll('input[name="t_mediums"]:checked')).map(cb => cb.value);
+
+    if (!mediums.length) {
+        wrap.innerHTML = '<p class="hint">আগে উপর থেকে মিডিয়াম নির্বাচন করুন</p>';
+        tMediumSelectedClasses = {};
+        tMediumClassSubjects = {};
+        tMediumClassOtherText = {};
+        tSyncMediumClassSubjectsJson();
+        return;
+    }
+
+    // আনসিলেক্ট হয়ে যাওয়া মিডিয়ামের ডেটা মুছে ফেলা
+    Object.keys(tMediumSelectedClasses).forEach(m => { if (!mediums.includes(m)) delete tMediumSelectedClasses[m]; });
+    Object.keys(tMediumClassSubjects).forEach(key => { if (!mediums.includes(key.split('::')[0])) delete tMediumClassSubjects[key]; });
+    Object.keys(tMediumClassOtherText).forEach(key => { if (!mediums.includes(key.split('::')[0])) delete tMediumClassOtherText[key]; });
+
+    wrap.innerHTML = mediums.map(medium => {
+        const classOptions = getClassGroupsForMedium(medium);
+        const selectedClasses = tMediumSelectedClasses[medium] || [];
+
+        const classChecks = classOptions.map(cls => `
+            <label class="checkbox-item">
+                <input type="checkbox" class="t-medium-class-cb" data-medium="${medium}" value="${cls}"
+                    ${selectedClasses.includes(cls) ? 'checked' : ''}
+                    onchange="handleTMediumClassChange('${medium}')">
+                ${cls}
+            </label>`).join('');
+
+        const subjectBoxes = selectedClasses.map(cls => {
+            const key = medium + '::' + cls;
+            const options = getSubjectsForClass(medium, cls);
+            const selectedSubs = tMediumClassSubjects[key] || [];
+            const chips = options.map(subj => `
+                <label class="chip-item ${selectedSubs.includes(subj) ? 'chip-selected' : ''}">
+                    <input type="checkbox" class="t-mc-subject-cb" data-key="${key}" value="${subj}"
+                        ${selectedSubs.includes(subj) ? 'checked' : ''}
+                        onchange="handleTMcSubjectChange('${key}')">
+                    <span>${subj}</span>
+                </label>`).join('');
+            const otherChecked = selectedSubs.includes('অন্যান্য বিষয়');
+            return `
+                <div class="t-mc-subject-box" data-mc-box="${key}" style="margin:8px 0 16px 18px;">
+                    <p class="hint" style="margin-bottom:6px;"><strong>${cls}</strong> — বিষয়সমূহ</p>
+                    <div class="chip-group">
+                        ${chips}
+                        <label class="chip-item ${otherChecked ? 'chip-selected' : ''}">
+                            <input type="checkbox" class="t-mc-subject-cb t-mc-other-cb" data-key="${key}" value="অন্যান্য বিষয়"
+                                ${otherChecked ? 'checked' : ''}
+                                onchange="handleTMcSubjectChange('${key}')">
+                            <span>অন্যান্য বিষয়</span>
+                        </label>
+                    </div>
+                    <input type="text" class="t-mc-other-subject-text" placeholder="বিষয়ের নাম লিখুন"
+                        oninput="handleTMcSubjectChange('${key}')"
+                        style="display:${otherChecked ? 'block' : 'none'}; margin-top:8px;"
+                        value="${tMediumClassOtherText[key] || ''}">
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="t-medium-box" style="margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #eee;">
+                <p class="hint" style="margin-bottom:6px;"><strong>${medium}</strong> — যেসব শ্রেণি পড়াতে পারবেন</p>
+                <div class="checkbox-group">${classChecks}</div>
+                ${subjectBoxes}
+            </div>`;
+    }).join('');
+
+    tSyncMediumClassSubjectsJson();
+}
+
+window.handleTMediumClassChange = function(medium) {
+    const checked = Array.from(document.querySelectorAll(`input.t-medium-class-cb[data-medium="${medium}"]:checked`)).map(cb => cb.value);
+    tMediumSelectedClasses[medium] = checked;
+    tRenderMediumClassSubjects();
+};
+
+window.handleTMcSubjectChange = function(key) {
+    const box = document.querySelector(`.t-mc-subject-box[data-mc-box="${key}"]`);
+    if (!box) return;
+
+    const checkboxes = box.querySelectorAll('.t-mc-subject-cb');
+    const allCb = Array.from(checkboxes).find(cb => cb.value === 'সকল বিষয়' || cb.value === 'All Subjects');
+    const otherCb = box.querySelector('.t-mc-other-cb');
+    const otherInput = box.querySelector('.t-mc-other-subject-text');
+
+    checkboxes.forEach(cb => {
+        if (allCb && allCb.checked && cb !== allCb) {
+            cb.checked = false;
+            cb.disabled = true;
+            cb.closest('.chip-item').classList.add('disabled');
         } else {
-            let checkedCount = 0;
-            tTimeCheckboxes.forEach(other => { if (other !== tAnyTimeCb && other.checked) checkedCount++; });
-            if (checkedCount > 0) {
-                tAnyTimeCb.checked = false;
-                tAnyTimeCb.disabled = true;
-                tAnyTimeLabel.classList.add('disabled');
-            } else {
-                tAnyTimeCb.disabled = false;
-                tAnyTimeLabel.classList.remove('disabled');
-            }
+            cb.disabled = false;
+            cb.closest('.chip-item').classList.remove('disabled');
         }
+        cb.closest('.chip-item').classList.toggle('chip-selected', cb.checked);
     });
-});
+
+    if (otherInput && otherCb) {
+        const showOther = otherCb.checked && !otherCb.disabled;
+        otherInput.style.display = showOther ? 'block' : 'none';
+        if (!showOther) otherInput.value = '';
+    }
+
+    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => {
+        if (cb === otherCb) {
+            const customVal = otherInput ? otherInput.value.trim() : '';
+            return customVal || 'অন্যান্য বিষয়';
+        }
+        return cb.value;
+    });
+
+    tMediumClassSubjects[key] = selected;
+    tMediumClassOtherText[key] = otherInput ? otherInput.value : '';
+    tSyncMediumClassSubjectsJson();
+};
+
+function tSyncMediumClassSubjectsJson() {
+    const cleaned = {};
+    Object.keys(tMediumClassSubjects).forEach(k => {
+        if (tMediumClassSubjects[k] && tMediumClassSubjects[k].length) cleaned[k] = tMediumClassSubjects[k];
+    });
+    document.getElementById('t_subjects_by_class_json').value = JSON.stringify(cleaned);
+}
+
+document.querySelectorAll('input[name="t_mediums"]').forEach(cb => cb.addEventListener('change', tRenderMediumClassSubjects));
 
 /* ---- স্ট্যাটাস অনুযায়ী ডাইনামিক দ্বিতীয় ডকুমেন্ট লেবেল ---- */
 const tStatusSelect = document.getElementById('t_status');
@@ -692,9 +830,9 @@ const T_TEXT_FIELD_IDS = [
     't_name', 't_gender', 't_phone', 't_altphone', 't_target_district', 't_address',
     't_otherAreaText', 't_status', 't_department', 't_session',
     't_institution', 't_institution_type', 't_degree_type', 't_ssc_group', 't_ssc_result',
-    't_ssc_school', 't_hsc_group', 't_hsc_result', 't_hsc_college', 't_subjects', 't_experience_years'
+    't_ssc_school', 't_hsc_group', 't_hsc_result', 't_hsc_college', 't_experience_years'
 ];
-const T_CHECKBOX_GROUPS = ['t_time', 't_classes', 't_mediums', 't_groups'];
+const T_CHECKBOX_GROUPS = ['t_mediums'];
 
 function teacherCollectDraftData() {
     const data = { step: document.querySelector('#teacherFlow .step-panel.active')?.dataset.tstep || '1' };
@@ -703,6 +841,9 @@ function teacherCollectDraftData() {
         data[name] = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
     });
     data.t_areas = tSelectedAreas;
+    data.t_medium_selected_classes = tMediumSelectedClasses;
+    data.t_medium_class_subjects = tMediumClassSubjects;
+    data.t_medium_class_other_text = tMediumClassOtherText;
     return data;
 }
 function teacherSaveDraft() {
@@ -733,6 +874,11 @@ function teacherRestoreDraft() {
             });
         }
     });
+
+    if (saved.t_medium_selected_classes) tMediumSelectedClasses = saved.t_medium_selected_classes;
+    if (saved.t_medium_class_subjects) tMediumClassSubjects = saved.t_medium_class_subjects;
+    if (saved.t_medium_class_other_text) tMediumClassOtherText = saved.t_medium_class_other_text;
+    tRenderMediumClassSubjects();
 
     if (tTargetDistrictSelect.value) {
         tHandleDistrictChange(true);
@@ -798,14 +944,28 @@ tCheckBtn.addEventListener('click', async () => {
     const step4Panel = document.querySelector('#teacherFlow .step-panel[data-tstep="4"]');
     if (!validateStep(step4Panel)) return;
 
-    const tTimeArr = Array.from(document.querySelectorAll('input[name="t_time"]:checked')).map(cb => cb.value);
-    const tClassesArr = Array.from(document.querySelectorAll('input[name="t_classes"]:checked')).map(cb => cb.value);
     const tMediumsArr = Array.from(document.querySelectorAll('input[name="t_mediums"]:checked')).map(cb => cb.value);
-    const tGroupsArr = Array.from(document.querySelectorAll('input[name="t_groups"]:checked')).map(cb => cb.value);
-
-    if (tTimeArr.length === 0) { alert('অনুগ্রহ করে পড়ানোর সময় নির্বাচন করুন।'); return; }
-    if (tClassesArr.length === 0) { alert('অনুগ্রহ করে অন্তত একটা শ্রেণি নির্বাচন করুন।'); return; }
     if (tMediumsArr.length === 0) { alert('অনুগ্রহ করে অন্তত একটা মিডিয়াম নির্বাচন করুন।'); return; }
+
+    const subjectsByClassJson = document.getElementById('t_subjects_by_class_json').value || '{}';
+    const parsedSubjectsByClass = JSON.parse(subjectsByClassJson);
+
+    let hasAnyClass = false;
+    const missingSubjectKeys = [];
+    tMediumsArr.forEach(medium => {
+        (tMediumSelectedClasses[medium] || []).forEach(cls => {
+            hasAnyClass = true;
+            const key = medium + '::' + cls;
+            if (!(parsedSubjectsByClass[key] && parsedSubjectsByClass[key].length)) {
+                missingSubjectKeys.push(`${cls} (${medium})`);
+            }
+        });
+    });
+    if (!hasAnyClass) { alert('অনুগ্রহ করে অন্তত একটা শ্রেণি নির্বাচন করুন।'); return; }
+    if (missingSubjectKeys.length) {
+        alert('অনুগ্রহ করে প্রতিটা নির্বাচিত শ্রেণির জন্য অন্তত একটা বিষয় বাছাই করুন: ' + missingSubjectKeys.join(', '));
+        return;
+    }
 
     tCheckBtn.disabled = true;
     tCheckBtn.classList.add('is-loading');
@@ -829,18 +989,26 @@ tCheckBtn.addEventListener('click', async () => {
         const institutionType = get('t_institution_type'), degreeType = get('t_degree_type');
         const sscGroup = get('t_ssc_group'), sscResult = get('t_ssc_result'), sscSchool = get('t_ssc_school');
         const hscGroup = get('t_hsc_group'), hscResult = get('t_hsc_result'), hscCollege = get('t_hsc_college');
-        const subjects = get('t_subjects'), experienceYears = normalizeDigits(get('t_experience_years'));
+        const experienceYears = normalizeDigits(get('t_experience_years'));
         const secondDocType = tSecondDocLabel.textContent;
+
+        const subjectsSummaryText = Object.keys(parsedSubjectsByClass).map(key => {
+            const [medium, cls] = key.split('::');
+            return `${cls} (${medium}): ${parsedSubjectsByClass[key].join(', ')}`;
+        }).join('\n');
+        const teachableClassesFlat = [...new Set(
+            tMediumsArr.flatMap(m => tMediumSelectedClasses[m] || [])
+        )].join(', ');
 
         teacherFinalMessage =
             `📋 টিউটর সিভি\n\n` +
-            `নাম: ${name}\nজেন্ডার: ${gender}\nফোন: ${phone}${altPhone ? ' / ' + altPhone : ''}\n` +
+            `নাম: ${name}\nলিঙ্গ: ${gender}\nফোন: ${phone}${altPhone ? ' / ' + altPhone : ''}\n` +
             `যে জেলায় টিউশন করাতে চান: ${targetDistrict}\nবর্তমান ঠিকানা: ${address}\n` +
             `টিউশনের এলাকা: ${locationsDisplay}\nবর্তমান স্ট্যাটাস: ${status}\n\n` +
             `-- শিক্ষাগত যোগ্যতা --\nবিভাগ/সেশন: ${department} / ${session}\nপ্রতিষ্ঠান: ${institution} (${institutionType})\nডিগ্রী: ${degreeType}\n` +
             `এসএসসি: ${sscGroup}, ${sscResult}, ${sscSchool}\nএইচএসসি: ${hscGroup}, ${hscResult}, ${hscCollege}\n\n` +
-            `-- পড়ানোর তথ্য --\nসময়: ${tTimeArr.join(', ')}\nশ্রেণি: ${tClassesArr.join(', ')}\nমিডিয়াম: ${tMediumsArr.join(', ')}\n` +
-            `গ্রুপ: ${tGroupsArr.join(', ') || 'উল্লেখ নেই'}\nবিষয়: ${subjects}\nঅভিজ্ঞতা: ${experienceYears || '0'} বছর`;
+            `-- পড়ানোর তথ্য --\nমিডিয়াম: ${tMediumsArr.join(', ')}\nক্লাসভিত্তিক বিষয়সমূহ:\n${subjectsSummaryText}\n` +
+            `অভিজ্ঞতা: ${experienceYears || '0'} বছর`;
 
         teacherFormDataObj = {
             formType: 'teacher',
@@ -851,9 +1019,9 @@ tCheckBtn.addEventListener('click', async () => {
             Institution_Type: institutionType, Degree_Type: degreeType,
             SSC_Group: sscGroup, SSC_Result: sscResult, SSC_School: sscSchool,
             HSC_Group: hscGroup, HSC_Result: hscResult, HSC_College: hscCollege,
-            Available_Times: tTimeArr.join(', '), Teachable_Classes: tClassesArr.join(', '),
-            Teachable_Mediums: tMediumsArr.join(', '), Teachable_Groups: tGroupsArr.join(', '),
-            Subjects: subjects, Experience_Years: experienceYears,
+            Teachable_Classes: teachableClassesFlat, Teachable_Mediums: tMediumsArr.join(', '),
+            Subjects: subjectsSummaryText, Subjects_By_Class: JSON.stringify(parsedSubjectsByClass),
+            Experience_Years: experienceYears,
             NID_Base64: nidBase64, NID_Filename: nidFile.name, NID_MimeType: nidFile.type,
             SecondDoc_Base64: secondDocBase64, SecondDoc_Filename: secondDocFile.name,
             SecondDoc_MimeType: secondDocFile.type, SecondDoc_Type: secondDocType
