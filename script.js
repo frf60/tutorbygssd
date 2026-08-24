@@ -1254,14 +1254,15 @@ tCheckBtn.addEventListener('click', async () => {
             const [medium, cls] = key.split('::');
             return `${cls} (${medium}): ${parsedSubjectsByClass[key].join(', ')}`;
         }).join('\n');
-        const nestedSubjectsByClass = {};
-        tMediumsArr.forEach(medium => {
-            nestedSubjectsByClass[medium] = {};
-            (tMediumSelectedClasses[medium] || []).forEach(cls => {
+        const nestedSubjectsByClass = tMediumsArr.map(medium => {
+            const classLines = (tMediumSelectedClasses[medium] || []).map(cls => {
                 const key = medium + '::' + cls;
-                nestedSubjectsByClass[medium][cls] = parsedSubjectsByClass[key] || [];
-            });
-        });
+                const subjectsArrJson = (parsedSubjectsByClass[key] || []).map(s => JSON.stringify(s)).join(', ');
+                return `    ${JSON.stringify(cls)}: [${subjectsArrJson}]`;
+            }).join(',\n');
+            return `  ${JSON.stringify(medium)}: {\n${classLines}\n  }`;
+        }).join(',\n');
+        const subjectsByClassJsonText = `{\n${nestedSubjectsByClass}\n}`;
         const teachableClassesFlat = tMediumsArr.map(m =>
             `${m}: ${(tMediumSelectedClasses[m] || []).join(', ')}`
         ).join('\n');
@@ -1289,7 +1290,7 @@ tCheckBtn.addEventListener('click', async () => {
             SSC_Group: sscGroup, SSC_Result: sscResult, SSC_School: sscSchool,
             HSC_Group: hscGroup, HSC_Result: hscResult, HSC_College: hscCollege,
             Teachable_Classes: teachableClassesFlat, Teachable_Mediums: tMediumsArr.join('\n'),
-            Subjects: subjectsSummaryText, Subjects_By_Class: JSON.stringify(nestedSubjectsByClass, null, 2),
+            Subjects: subjectsSummaryText, Subjects_By_Class: subjectsByClassJsonText,
             Admission_Test_Subjects: admissionTestText,
             Experience_Years: experienceYears,
             ID_Doc_Type: idDocTypeLabel,
