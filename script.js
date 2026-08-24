@@ -3,7 +3,7 @@ const scriptURL = 'https://script.google.com/macros/s/AKfycbxMa3MPH4oEyVfGrw4Iyr
 
 // এই বিষয়গুলো "সকল বিষয়" থেকে সবসময় স্বাধীন থাকবে — "সকল বিষয়" টিক দিলেও এগুলো ডিজেবল হবে না,
 // আলাদাভাবে সবসময় সিলেক্ট করা যাবে (গার্ডিয়ান ও টিচার — দুই ফর্মেই প্রযোজ্য)
-const INDEPENDENT_SUBJECTS = ['ড্রয়িং', 'আরবি', 'হাতের লেখা'];
+const INDEPENDENT_SUBJECTS = ['ড্রয়িং', 'আরবি', 'হাতের লেখা', 'Drawing', 'Arabic', 'Handwriting'];
 
 // "সকল বিষয়"/"All Subjects" এবং গ্রুপ-চেকবক্স (সাইন্স/কমার্স/আর্টস গ্রুপ, GROUP_SUBJECTS-এ ডিফাইনড) এখন
 // এক্সক্লুসিভ/ডিজেবলিং নয় — বরং "select-all" শর্টকাট: টিক দিলে তার আন্ডারলাইং বিষয়গুলো অটো-টিক হয়,
@@ -621,7 +621,7 @@ function tRenderMediumClassSubjects() {
     Object.keys(tRangeSubjects).forEach(key => { if (!mediums.includes(key.split('::')[0])) delete tRangeSubjects[key]; });
     Object.keys(tRangeOtherText).forEach(key => { if (!mediums.includes(key.split('::')[0])) delete tRangeOtherText[key]; });
 
-    wrap.innerHTML = '<p class="hint" style="margin-bottom:10px;">✅ আপনি যেসব বিষয়ে এক্সপার্ট নন সেগুলো তালিকা থেকে বাদ দিয়ে দিন।</p>' + mediums.map(medium => {
+    wrap.innerHTML = '<p class="hint" style="margin-bottom:10px;">✅ আপনি কোনো বিষয়ে এক্সপার্ট না কিন্তু ওই বিষয়টি সিলেক্ট হয়ে গেছে? সিলেক্টেড বিষয়ের উপর ট্যাপ করুন, বিষয়টি তালিকা থেকে বাদ হয়ে যাবে।</p>' + mediums.map(medium => {
         const ranges = getRangesForMedium(medium);
         const selectedRanges = tMediumSelectedRanges[medium] || [];
 
@@ -673,8 +673,10 @@ function tRenderMediumClassSubjects() {
             </div>`;
     }).join('');
 
-    // রেন্ডারের পর chip-selected স্টাইল ঠিকভাবে সিঙ্ক করা (নতুন ডিফল্ট-চেকড "সকল বিষয়"সহ) —
-    // data-prev টেমপ্লেটেই বর্তমান checked-state অনুযায়ী বসানো, তাই এই পাসে নতুন cascade ট্রিগার হবে না
+    // রেন্ডারের পর chip-selected স্টাইল ঠিকভাবে সিঙ্ক করা — ডিফল্ট-চেকড "সকল বিষয়"সহ পুরো
+    // বিষয়-তালিকা ইতিমধ্যে handleTMediumRangeChange-এ এক্সপ্যান্ড করা হয়ে গেছে, তাই
+    // data-prev টেমপ্লেটেই বর্তমান checked-state অনুযায়ী বসানো থাকে ও এই পাসে নতুন
+    // cascade ট্রিগার হবে না (শুধু .chip-selected ক্লাস সিঙ্ক করে)
     Object.keys(tRangeSubjects).forEach(key => handleTRangeSubjectChange(key));
 
     tSyncMediumClassSubjectsJson();
@@ -697,13 +699,18 @@ window.handleTMediumRangeChange = function(medium) {
     const checkedLabels = Array.from(document.querySelectorAll(`input.t-medium-range-cb[data-medium="${medium}"]:checked`)).map(cb => cb.value);
     const previouslySelected = tMediumSelectedRanges[medium] || [];
 
-    // নতুন সিলেক্ট হওয়া রেঞ্জে ডিফল্টভাবে "সকল বিষয়"/"All Subjects" সিলেক্টেড থাকবে (থাকলে)
+    // নতুন সিলেক্ট হওয়া রেঞ্জে ডিফল্টভাবে "সকল বিষয়"/"All Subjects" সিলেক্টেড থাকবে (থাকলে) —
+    // শুধু লেবেলটাই না, তার আন্ডারলাইং সবগুলো বিষয়ও (ইন্ডিপেন্ডেন্ট বিষয় বাদে) সাথে সাথে
+    // সিলেক্ট করে দেওয়া হয়, নাহলে পরের রেন্ডার-সিঙ্ক পাসে কোনো "ট্রানজিশন" ধরা পড়ে না
+    // (মাস্টার চেকবক্স আগে থেকেই checked থাকে) ও cascade কখনো ট্রিগার হয় না
     checkedLabels.forEach(label => {
         const key = medium + '::' + label;
         if (!previouslySelected.includes(label) && !tRangeSubjects[key]) {
             const options = getUniqueSubjectsForRange(medium, label);
             const allValue = options.find(o => o === 'সকল বিষয়' || o === 'All Subjects');
-            tRangeSubjects[key] = allValue ? [allValue] : [];
+            tRangeSubjects[key] = allValue
+                ? options.filter(o => o === allValue || !INDEPENDENT_SUBJECTS.includes(o))
+                : [];
             expandRangeToClasses(medium, label, tRangeSubjects[key]);
         }
     });
@@ -855,25 +862,63 @@ window.handleAdmissionTestSubjectChange = function() {
     tAdmissionTestOtherText = otherInput ? otherInput.value : '';
 };
 
-/* ---- স্ট্যাটাস অনুযায়ী ডাইনামিক দ্বিতীয় ডকুমেন্ট লেবেল ---- */
-const tStatusSelect = document.getElementById('t_status');
+/* ---- আইডি ডকুমেন্ট টাইপ (NID / জন্মনিবন্ধন) অনুযায়ী ডাইনামিক আপলোড ফিল্ড ---- */
+const tIdDocNidGroup = document.getElementById('t_nid_group');
+const tIdDocBirthGroup = document.getElementById('t_birth_group');
+const tNidFrontInput = document.getElementById('t_nid_front');
+const tNidBackInput = document.getElementById('t_nid_back');
+const tBirthCertInput = document.getElementById('t_birth_cert');
+
+function tGetCheckedValue(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : '';
+}
+
+function updateIdDocGroup() {
+    const type = tGetCheckedValue('t_id_doc_type');
+    if (type === 'NID') {
+        tIdDocNidGroup.style.display = 'block';
+        tIdDocBirthGroup.style.display = 'none';
+        tNidFrontInput.required = true;
+        tNidBackInput.required = true;
+        tBirthCertInput.required = false;
+        tBirthCertInput.value = '';
+    } else if (type === 'BirthCertificate') {
+        tIdDocNidGroup.style.display = 'none';
+        tIdDocBirthGroup.style.display = 'block';
+        tNidFrontInput.required = false;
+        tNidBackInput.required = false;
+        tNidFrontInput.value = '';
+        tNidBackInput.value = '';
+        tBirthCertInput.required = true;
+    } else {
+        tIdDocNidGroup.style.display = 'none';
+        tIdDocBirthGroup.style.display = 'none';
+        tNidFrontInput.required = false;
+        tNidBackInput.required = false;
+        tBirthCertInput.required = false;
+    }
+}
+document.querySelectorAll('input[name="t_id_doc_type"]').forEach(r => r.addEventListener('change', updateIdDocGroup));
+
+/* ---- দ্বিতীয় ডকুমেন্ট টাইপ (স্টুডেন্ট / জব) অনুযায়ী ডাইনামিক লেবেল ---- */
 const tSecondDocLabel = document.getElementById('t_second_doc_label');
 const tSecondDocHint = document.getElementById('t_second_doc_hint');
 
 function updateSecondDocLabel() {
-    const status = tStatusSelect.value;
-    if (status === 'স্টুডেন্ট') {
-        tSecondDocLabel.textContent = 'স্টুডেন্ট আইডি/ভর্তির প্রমাণ';
+    const type = tGetCheckedValue('t_second_doc_type');
+    if (type === 'স্টুডেন্ট') {
+        tSecondDocLabel.textContent = 'স্টুডেন্ট আইডি কার্ড / ভর্তির প্রমাণ';
         tSecondDocHint.textContent = 'বিভাগ ও সেশন যাচাইয়ের জন্য স্টুডেন্ট আইডি কার্ড বা ভর্তির রেজিস্ট্রেশনের ছবি দিন';
-    } else if (status) {
-        tSecondDocLabel.textContent = 'জব আইডি/প্রফেশনাল প্রমাণ';
-        tSecondDocHint.textContent = 'কর্মস্থলের আইডি কার্ড বা প্রাসঙ্গিক প্রমাণের ছবি দিন';
+    } else if (type === 'জব') {
+        tSecondDocLabel.textContent = 'জব আইডি কার্ড / শিক্ষকতার প্রমাণপত্র';
+        tSecondDocHint.textContent = 'কর্মস্থলের আইডি কার্ড বা শিক্ষকতার প্রমাণপত্রের ছবি দিন';
     } else {
         tSecondDocLabel.textContent = 'দ্বিতীয় ডকুমেন্ট';
         tSecondDocHint.textContent = '';
     }
 }
-tStatusSelect.addEventListener('change', updateSecondDocLabel);
+document.querySelectorAll('input[name="t_second_doc_type"]').forEach(r => r.addEventListener('change', updateSecondDocLabel));
 
 /* ============================================================
    জেলা → এরিয়া (মাল্টি-সিলেক্ট, সার্চেবল চিপ পিকার) — টিচার ফর্ম
@@ -942,12 +987,22 @@ function tRenderAreaDropdown(query) {
     html += `<div class="area-dropdown-item other-option" data-other="1">✏️ অন্যান্য (তালিকায় নেই — নিজে লিখুন)</div>`;
     tAreasDropdown.innerHTML = html;
 
+    // প্রতিটা আইটেম ক্লিকে stopPropagation() জরুরি — কারণ tSelectArea() নিজেই
+    // ড্রপডাউনের innerHTML রিবিল্ড করে দেয় (বাকি এরিয়া দেখানোর জন্য), যার ফলে
+    // ক্লিক করা এলিমেন্টটাই DOM থেকে বিচ্ছিন্ন (detached) হয়ে যায়। এরপর ইভেন্ট
+    // document পর্যন্ত bubble করলে outside-click লিসেনার (নিচে দেখুন) সেই
+    // detached element-কে "বাইরের ক্লিক" ভেবে ড্রপডাউন বন্ধ করে দিচ্ছিল —
+    // এটাই ছিল "একটা এরিয়া সিলেক্ট করলেই ড্রপডাউন বন্ধ হয়ে যায়" বাগের কারণ।
     tAreasDropdown.querySelectorAll('.area-dropdown-item[data-area]').forEach(item => {
-        item.addEventListener('click', () => tSelectArea(item.dataset.area));
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tSelectArea(item.dataset.area);
+        });
     });
     const otherItem = tAreasDropdown.querySelector('.area-dropdown-item[data-other]');
     if (otherItem) {
-        otherItem.addEventListener('click', () => {
+        otherItem.addEventListener('click', (e) => {
+            e.stopPropagation();
             tShowOtherAreaField();
             tAreasDropdown.classList.remove('open');
         });
@@ -1005,7 +1060,7 @@ const T_TEXT_FIELD_IDS = [
     't_institution', 't_institution_type', 't_degree_type', 't_ssc_group', 't_ssc_result',
     't_ssc_school', 't_hsc_group', 't_hsc_result', 't_hsc_college', 't_experience_years'
 ];
-const T_CHECKBOX_GROUPS = ['t_mediums'];
+const T_CHECKBOX_GROUPS = ['t_mediums', 't_id_doc_type', 't_second_doc_type'];
 
 function teacherCollectDraftData() {
     const data = { step: document.querySelector('#teacherFlow .step-panel.active')?.dataset.tstep || '1' };
@@ -1077,6 +1132,7 @@ function teacherRestoreDraft() {
         tAreasDropdown.classList.remove('open');
     }
 
+    updateIdDocGroup();
     updateSecondDocLabel();
     goToTeacherStep(Number(saved.step) || 1);
 }
@@ -1117,7 +1173,9 @@ function setupUploadStatus(inputId, statusId) {
         }
     });
 }
-setupUploadStatus('t_nid', 't_nid_status');
+setupUploadStatus('t_nid_front', 't_nid_front_status');
+setupUploadStatus('t_nid_back', 't_nid_back_status');
+setupUploadStatus('t_birth_cert', 't_birth_cert_status');
 setupUploadStatus('t_second_doc', 't_second_doc_status');
 
 /* ---- ধাপ ৪ → সারাংশ (CV) তৈরি ---- */
@@ -1158,12 +1216,25 @@ tCheckBtn.addEventListener('click', async () => {
     tCheckBtn.classList.add('is-loading');
 
     try {
-        const nidFile = document.getElementById('t_nid').files[0];
+        const idDocType = tGetCheckedValue('t_id_doc_type');
+        const idDocTypeLabel = idDocType === 'NID' ? 'জাতীয় পরিচয়পত্র (NID)' : 'জন্মনিবন্ধন (Birth Certificate)';
+
+        let nidFile, nidBackFile;
+        let nidBase64 = '', nidBackBase64 = '';
+        if (idDocType === 'NID') {
+            nidFile = document.getElementById('t_nid_front').files[0];
+            nidBackFile = document.getElementById('t_nid_back').files[0];
+            [nidBase64, nidBackBase64] = await Promise.all([
+                fileToBase64(nidFile),
+                fileToBase64(nidBackFile)
+            ]);
+        } else {
+            nidFile = document.getElementById('t_birth_cert').files[0];
+            nidBase64 = await fileToBase64(nidFile);
+        }
+
         const secondDocFile = document.getElementById('t_second_doc').files[0];
-        const [nidBase64, secondDocBase64] = await Promise.all([
-            fileToBase64(nidFile),
-            fileToBase64(secondDocFile)
-        ]);
+        const secondDocBase64 = await fileToBase64(secondDocFile);
 
         const get = id => document.getElementById(id).value;
         const name = get('t_name'), gender = get('t_gender'), phone = get('t_phone'), altPhone = get('t_altphone');
@@ -1192,7 +1263,8 @@ tCheckBtn.addEventListener('click', async () => {
             `📋 টিউটর সিভি\n\n` +
             `নাম: ${name}\nলিঙ্গ: ${gender}\nফোন: ${phone}${altPhone ? ' / ' + altPhone : ''}\n` +
             `যে জেলায় টিউশন করাতে চান: ${targetDistrict}\nবর্তমান ঠিকানা: ${address}\n` +
-            `টিউশনের এলাকা: ${locationsDisplay}\nবর্তমান স্ট্যাটাস: ${status}\n\n` +
+            `টিউশনের এলাকা: ${locationsDisplay}\nবর্তমান স্ট্যাটাস: ${status}\n` +
+            `পরিচয়পত্র: ${idDocTypeLabel}\n\n` +
             `-- শিক্ষাগত যোগ্যতা --\nবিভাগ/সেশন: ${department} / ${session}\nপ্রতিষ্ঠান: ${institution} (${institutionType})\nডিগ্রী: ${degreeType}\n` +
             `এসএসসি: ${sscGroup}, ${sscResult}, ${sscSchool}\nএইচএসসি: ${hscGroup}, ${hscResult}, ${hscCollege}\n\n` +
             `-- পড়ানোর তথ্য --\nমিডিয়াম: ${tMediumsArr.join(', ')}\nক্লাসভিত্তিক বিষয়সমূহ:\n${subjectsSummaryText}\n` +
@@ -1212,7 +1284,10 @@ tCheckBtn.addEventListener('click', async () => {
             Subjects: subjectsSummaryText, Subjects_By_Class: JSON.stringify(parsedSubjectsByClass),
             Admission_Test_Subjects: admissionTestText,
             Experience_Years: experienceYears,
+            ID_Doc_Type: idDocTypeLabel,
             NID_Base64: nidBase64, NID_Filename: nidFile.name, NID_MimeType: nidFile.type,
+            NID_Back_Base64: nidBackBase64, NID_Back_Filename: nidBackFile ? nidBackFile.name : '',
+            NID_Back_MimeType: nidBackFile ? nidBackFile.type : '',
             SecondDoc_Base64: secondDocBase64, SecondDoc_Filename: secondDocFile.name,
             SecondDoc_MimeType: secondDocFile.type, SecondDoc_Type: secondDocType
         };
