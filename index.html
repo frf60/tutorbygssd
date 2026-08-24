@@ -408,8 +408,7 @@
                         <option value="প্রাইমারি স্কুল টিচার">প্রাইমারি স্কুল টিচার</option>
                         <option value="হাই স্কুল টিচার">হাই স্কুল টিচার</option>
                         <option value="কলেজ টিচার">কলেজ টিচার</option>
-                        <option value="কোচিং টিচার">কোচিং টিচার</option>
-                        <option value="মাদ্রাসা শিক্ষক">মাদ্রাসা শিক্ষক</option>
+                        <option value="মাদ্রাসা টিচার">মাদ্রাসা টিচার</option>
                     </select>
                 </div>
                 <button type="button" class="btn btn-accent" data-tnext="2">পরবর্তী ধাপ →</button>
@@ -533,9 +532,8 @@
                 <div class="form-group">
                     <label class="checkbox-item" style="font-weight:bold;">
                         <input type="checkbox" id="t_admission_test_toggle" onchange="handleAdmissionTestToggle(this.checked)">
-                        বিশ্ববিদ্যালয় ভর্তি পরীক্ষার প্রস্তুতি পড়াতে পারবেন
+                        বিশ্ববিদ্যালয় ভর্তি পরীক্ষার প্রস্তুতি পড়াতে চাইলে এই বক্সে ট্যাপ করে বিষয় সিলেক্ট করুন
                     </label>
-                    <p class="hint">এটা কোনো নির্দিষ্ট মিডিয়ামের সাথে যুক্ত নয় — যেকোনো মিডিয়াম থেকেই একই থাকে</p>
                     <div id="t_admission_test_subjects"></div>
                 </div>
                 <div class="form-group">
@@ -552,11 +550,49 @@
             <!-- Step 4: ডকুমেন্ট আপলোড -->
             <div class="section step-panel" data-tstep="4">
                 <h2 class="section-title">ডকুমেন্ট আপলোড</h2>
+
                 <div class="form-group">
-                    <label for="t_nid">এনআইডি কার্ড বা জন্ম নিবন্ধনের ছবি</label>
-                    <input type="file" id="t_nid" accept="image/*,.pdf" required>
-                    <p class="hint">ছবি স্পষ্ট হতে হবে (JPG, PNG বা PDF)</p>
-                    <p class="upload-status" id="t_nid_status"></p>
+                    <label>দুইটা অপশন থেকে সিলেক্ট করো</label>
+                    <div class="chip-group">
+                        <label class="chip-item"><input type="radio" name="t_id_doc_type" value="NID" required> জাতীয় পরিচয়পত্র (NID card)</label>
+                        <label class="chip-item"><input type="radio" name="t_id_doc_type" value="BirthCertificate"> জন্মনিবন্ধন (Birth Certificate)</label>
+                    </div>
+                    <p class="hint">এনআইডি হলে দুইপাশের ছবি, জন্মনিবন্ধন হলে একপাশের ছবি দিতে হবে।</p>
+                </div>
+
+                <!-- NID সিলেক্ট হলে: দুইপাশের ছবি -->
+                <div id="t_nid_group" style="display:none;">
+                    <div class="form-group">
+                        <label for="t_nid_front">এনআইডি কার্ডের সামনের পাশের ছবি</label>
+                        <input type="file" id="t_nid_front" accept="image/*,.pdf">
+                        <p class="hint">ছবি স্পষ্ট হতে হবে (JPG, PNG বা PDF)</p>
+                        <p class="upload-status" id="t_nid_front_status"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="t_nid_back">এনআইডি কার্ডের পেছনের পাশের ছবি</label>
+                        <input type="file" id="t_nid_back" accept="image/*,.pdf">
+                        <p class="hint">ছবি স্পষ্ট হতে হবে (JPG, PNG বা PDF)</p>
+                        <p class="upload-status" id="t_nid_back_status"></p>
+                    </div>
+                </div>
+
+                <!-- জন্মনিবন্ধন সিলেক্ট হলে: একপাশের ছবি -->
+                <div id="t_birth_group" style="display:none;">
+                    <div class="form-group">
+                        <label for="t_birth_cert">জন্ম নিবন্ধনের ছবি</label>
+                        <input type="file" id="t_birth_cert" accept="image/*,.pdf">
+                        <p class="hint">ছবি স্পষ্ট হতে হবে (JPG, PNG বা PDF)</p>
+                        <p class="upload-status" id="t_birth_cert_status"></p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>দুইটা অপশন থেকে সিলেক্ট করো</label>
+                    <div class="chip-group">
+                        <label class="chip-item"><input type="radio" name="t_second_doc_type" value="স্টুডেন্ট" required> স্টুডেন্ট আইডি কার্ড / ভর্তির প্রমাণ</label>
+                        <label class="chip-item"><input type="radio" name="t_second_doc_type" value="জব"> জব আইডি কার্ড / শিক্ষকতার প্রমাণপত্র</label>
+                    </div>
+                    <p class="hint">এই সেকশনে একপাশের ছবি দিলেই হবে, এখানে একটাই ছবি লাগবে।</p>
                 </div>
                 <div class="form-group">
                     <label for="t_second_doc" id="t_second_doc_label">দ্বিতীয় ডকুমেন্ট</label>
