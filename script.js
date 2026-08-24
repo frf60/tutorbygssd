@@ -472,7 +472,7 @@ checkBtn.addEventListener('click', () => {
             return;
         }
         studentDetailsText += `[শিক্ষার্থী ${i+1}] ক্লাস: ${sClasses[i].value}, মিডিয়াম: ${sMediums[i].value}\nবিষয়: ${sSubjects[i].value}\n`;
-        studentDetailsForSheet += `Student ${i+1}: Class ${sClasses[i].value} (${sMediums[i].value}), Subjects: ${sSubjects[i].value} | `;
+        studentDetailsForSheet += `Student ${i+1}: ${sMediums[i].value}, ${sClasses[i].value}, ${sSubjects[i].value}\n`;
         studentClassesRaw.push(sClasses[i].value);
         studentSubjectsRaw.push(sSubjects[i].value);
         studentMediumsRaw.push(sMediums[i].value);
@@ -484,9 +484,9 @@ checkBtn.addEventListener('click', () => {
     formDataObj = {
         formType: 'guardian',
         District: district, Area: area, Phone: phone, Address: address, Teacher_Gender: teacherGender,
-        Student_Count: studentCount, Student_Details: studentDetailsForSheet,
-        Student_Classes: studentClassesRaw.join(','), Student_Subjects: studentSubjectsRaw.join(' | '),
-        Student_Mediums: studentMediumsRaw.join(','),
+        Student_Count: studentCount, Student_Details: studentDetailsForSheet.trim(),
+        Student_Classes: studentClassesRaw.join('\n'), Student_Subjects: studentSubjectsRaw.join('\n'),
+        Student_Mediums: studentMediumsRaw.join('\n'),
         Days: days, Duration: duration, Time: timeStr, Salary: salary, Special_Requirements: specialReq
     };
 
@@ -1254,9 +1254,9 @@ tCheckBtn.addEventListener('click', async () => {
             const [medium, cls] = key.split('::');
             return `${cls} (${medium}): ${parsedSubjectsByClass[key].join(', ')}`;
         }).join('\n');
-        const teachableClassesFlat = [...new Set(
-            tMediumsArr.flatMap(m => tMediumSelectedClasses[m] || [])
-        )].join(', ');
+        const teachableClassesFlat = tMediumsArr.map(m =>
+            `${m}: ${(tMediumSelectedClasses[m] || []).join(', ')}`
+        ).join('\n');
         const admissionTestText = tAdmissionTestSelected.join(', ');
 
         teacherFinalMessage =
@@ -1280,8 +1280,8 @@ tCheckBtn.addEventListener('click', async () => {
             Institution_Type: institutionType, Degree_Type: degreeType,
             SSC_Group: sscGroup, SSC_Result: sscResult, SSC_School: sscSchool,
             HSC_Group: hscGroup, HSC_Result: hscResult, HSC_College: hscCollege,
-            Teachable_Classes: teachableClassesFlat, Teachable_Mediums: tMediumsArr.join(', '),
-            Subjects: subjectsSummaryText, Subjects_By_Class: JSON.stringify(parsedSubjectsByClass),
+            Teachable_Classes: teachableClassesFlat, Teachable_Mediums: tMediumsArr.join('\n'),
+            Subjects: subjectsSummaryText, Subjects_By_Class: JSON.stringify(parsedSubjectsByClass, null, 2),
             Admission_Test_Subjects: admissionTestText,
             Experience_Years: experienceYears,
             ID_Doc_Type: idDocTypeLabel,
