@@ -5,6 +5,29 @@ const scriptURL = 'https://script.google.com/macros/s/AKfycbxMa3MPH4oEyVfGrw4Iyr
 // আলাদাভাবে সবসময় সিলেক্ট করা যাবে (গার্ডিয়ান ও টিচার — দুই ফর্মেই প্রযোজ্য)
 const INDEPENDENT_SUBJECTS = ['ড্রয়িং', 'আরবি', 'হাতের লেখা'];
 
+// "সকল বিষয়"/"All Subjects" এবং গ্রুপ-চেকবক্স (সাইন্স/কমার্স/আর্টস গ্রুপ, GROUP_SUBJECTS-এ ডিফাইনড) এখন
+// এক্সক্লুসিভ/ডিজেবলিং নয় — বরং "select-all" শর্টকাট: টিক দিলে তার আন্ডারলাইং বিষয়গুলো অটো-টিক হয়,
+// আনটিক করলে অটো-আনটিক হয় — কিন্তু প্রতিটা বিষয় সবসময় আলাদাভাবে টগল করা যায়, কখনো ডিজেবল হয় না।
+// (data-prev অ্যাট্রিবিউট দিয়ে আগের checked-state ট্র্যাক করা হয়, যাতে শুধু ট্রানজিশনেই cascade চলে)
+function applyMasterGroupAutoSelect(checkboxes) {
+    checkboxes.forEach(masterCb => {
+        const isAllSubjects = (masterCb.value === 'সকল বিষয়' || masterCb.value === 'All Subjects');
+        const groupList = (typeof GROUP_SUBJECTS !== 'undefined') ? GROUP_SUBJECTS[masterCb.value] : null;
+        if (!isAllSubjects && !groupList) return;
+
+        const wasChecked = masterCb.dataset.prev === 'true';
+        const isChecked = masterCb.checked;
+        if (wasChecked === isChecked) return; // কোনো ট্রানজিশন নেই, cascade দরকার নেই
+
+        checkboxes.forEach(cb => {
+            if (cb === masterCb || INDEPENDENT_SUBJECTS.includes(cb.value)) return;
+            const affected = isAllSubjects ? true : groupList.includes(cb.value);
+            if (affected) cb.checked = isChecked;
+        });
+    });
+    checkboxes.forEach(cb => { cb.dataset.prev = String(cb.checked); });
+}
+
 /* ============================================================
    ROLE TABS
 ============================================================ */
@@ -93,12 +116,12 @@ window.handleClassChange = function(selectElement, index) {
     subjectsWrap.innerHTML = `<div class="chip-group">` +
         subjects.map((subj, si) => `
             <label class="chip-item">
-                <input type="checkbox" class="s-subject-cb" value="${subj}" onchange="handleSubjectChipChange(${index})" id="subj-${index}-${si}">
+                <input type="checkbox" class="s-subject-cb" value="${subj}" data-prev="false" onchange="handleSubjectChipChange(${index})" id="subj-${index}-${si}">
                 <span>${subj}</span>
             </label>`).join('') +
         `
             <label class="chip-item">
-                <input type="checkbox" class="s-subject-cb s-other-cb" value="অন্যান্য বিষয়" onchange="handleSubjectChipChange(${index})" id="subj-${index}-other">
+                <input type="checkbox" class="s-subject-cb s-other-cb" value="অন্যান্য বিষয়" data-prev="false" onchange="handleSubjectChipChange(${index})" id="subj-${index}-other">
                 <span>অন্যান্য বিষয়</span>
             </label>
         </div>
@@ -106,31 +129,23 @@ window.handleClassChange = function(selectElement, index) {
         <input type="hidden" class="s-subjects" required>`;
 };
 
-// "সকল বিষয়" (বা "All Subjects") টিক দিলে বাকি সব বিষয় নিষ্ক্রিয় হয়ে যাবে (একসাথে সিলেক্ট করার দরকার নেই)
+// "সকল বিষয়"/"All Subjects" বা কোনো গ্রুপ-চেকবক্স (সাইন্স/কমার্স/আর্টস গ্রুপ) টিক দিলে তার
+// আন্ডারলাইং বিষয়গুলো অটো-টিক হয়ে যাবে (ড্রয়িং/আরবি/হাতের লেখা বাদে), আনটিক করলে অটো-আনটিক হবে —
+// কিন্তু প্রতিটা বিষয় সবসময় আলাদাভাবে টগল করা যাবে, ডিজেবল হবে না
 window.handleSubjectChipChange = function(index) {
     const box = document.querySelector(`.student-box[data-index="${index}"]`);
     const checkboxes = box.querySelectorAll('.s-subject-cb');
-    const allSubjectsCb = Array.from(checkboxes).find(cb => cb.value === 'সকল বিষয়' || cb.value === 'All Subjects');
     const otherCb = box.querySelector('.s-other-cb');
     const otherInput = box.querySelector('.s-other-subject-text');
 
+    applyMasterGroupAutoSelect(checkboxes);
+
     checkboxes.forEach(cb => {
-        if (INDEPENDENT_SUBJECTS.includes(cb.value)) {
-            cb.disabled = false;
-            cb.closest('.chip-item').classList.remove('disabled');
-        } else if (allSubjectsCb && allSubjectsCb.checked && cb !== allSubjectsCb) {
-            cb.checked = false;
-            cb.disabled = true;
-            cb.closest('.chip-item').classList.add('disabled');
-        } else {
-            cb.disabled = false;
-            cb.closest('.chip-item').classList.remove('disabled');
-        }
         cb.closest('.chip-item').classList.toggle('chip-selected', cb.checked);
     });
 
     if (otherInput && otherCb) {
-        const showOther = otherCb.checked && !otherCb.disabled;
+        const showOther = otherCb.checked;
         otherInput.style.display = showOther ? 'block' : 'none';
         otherInput.required = showOther;
         if (!showOther) otherInput.value = '';
@@ -374,6 +389,9 @@ function restoreDraft() {
                         otherCb.checked = true;
                         if (otherInput) otherInput.value = unmatched.join(', ');
                     }
+                    // রিস্টোরের সময় বর্তমান checked অবস্থাকেই "prev" ধরে নেওয়া হচ্ছে,
+                    // যাতে handleSubjectChipChange নতুন করে group/all-subjects cascade না চালায়
+                    subjectCbs.forEach(cb => { cb.dataset.prev = String(cb.checked); });
                     handleSubjectChipChange(i);
                 }
             });
@@ -565,9 +583,10 @@ document.querySelectorAll('[data-tback]').forEach(btn => {
    একটা রেঞ্জে বিষয় বাছাই হলে তা ভেতরে-ভেতরে প্রতিটা প্রকৃত ক্লাসে expand হয়ে
    tMediumSelectedClasses/tMediumClassSubjects-এ ঠিক আগের মতোই জমা হয় — তাই
    সাবমিশন ফরম্যাট (Teachable_Classes, Subjects_By_Class) ও ম্যাচিং একদম অপরিবর্তিত থাকে।
-   "এডমিশন টেস্ট"-এর মতো freeText রেঞ্জ কোনো প্রকৃত ক্লাসের সাথে ম্যাপ হয় না (নতুন,
-   ম্যাচিং-স্বতন্ত্র ক্যাটাগরি), তাই সেটা আলাদাভাবে tAdmissionTestNotes-এ জমা হয়ে
-   Admission_Test_Subjects ফিল্ড হিসেবে সাবমিট হয়।
+   "বিশ্ববিদ্যালয় ভর্তি পরীক্ষার প্রস্তুতি" এখন কোনো মিডিয়ামের অংশ নয় — সম্পূর্ণ স্বতন্ত্র একটা
+   সেকশন (t_admission_test_toggle/t_admission_test_subjects), যেকোনো মিডিয়াম থেকেই একই থাকে,
+   তাই প্রকৃত কোনো ক্লাসের সাথে ম্যাপ হয় না ও Teachable_Classes/matching-কে প্রভাবিত করে না —
+   আলাদা Admission_Test_Subjects ফিল্ড হিসেবে জমা হয়।
 ============================================================ */
 let tMediumSelectedClasses = {}; // { "বাংলা মিডিয়াম (BM)": ["৯ম শ্রেণি", "১০ম শ্রেণি"], ... } — রেঞ্জ থেকে অটো-জেনারেটেড
 let tMediumClassSubjects = {};   // { "বাংলা মিডিয়াম (BM)::৯ম শ্রেণি": ["ইংরেজি", "আর্টস গ্রুপ"], ... } — রেঞ্জ থেকে অটো-জেনারেটেড
@@ -575,7 +594,8 @@ let tMediumClassOtherText = {};  // (রেঞ্জ-লেভেলে tRangeOt
 let tMediumSelectedRanges = {};  // { "বাংলা মিডিয়াম (BM)": ["৬ষ্ঠ - ৮ম", "৯ম - এসএসসি"] }
 let tRangeSubjects = {};         // { "বাংলা মিডিয়াম (BM)::৬ষ্ঠ - ৮ম": ["গণিত", "ইংরেজি"] }
 let tRangeOtherText = {};        // { "বাংলা মিডিয়াম (BM)::৬ষ্ঠ - ৮ম": "কাস্টম বিষয়ের টেক্সট" }
-let tAdmissionTestNotes = {};    // { "বাংলা মিডিয়াম (BM)": "মেডিকেল ভর্তি - পদার্থ, রসায়ন, জীববিজ্ঞান" }
+let tAdmissionTestSelected = []; // স্বতন্ত্র, মিডিয়াম-নিরপেক্ষ — যেসব বিষয় সিলেক্টেড (ADMISSION_TEST_SUBJECTS + কাস্টম)
+let tAdmissionTestOtherText = ''; // "অন্যান্য বিষয়" কাস্টম টেক্সট
 
 function tRenderMediumClassSubjects() {
     const wrap = document.getElementById('t_medium_class_subjects');
@@ -589,7 +609,6 @@ function tRenderMediumClassSubjects() {
         tMediumSelectedRanges = {};
         tRangeSubjects = {};
         tRangeOtherText = {};
-        tAdmissionTestNotes = {};
         tSyncMediumClassSubjectsJson();
         return;
     }
@@ -601,7 +620,6 @@ function tRenderMediumClassSubjects() {
     Object.keys(tMediumSelectedRanges).forEach(m => { if (!mediums.includes(m)) delete tMediumSelectedRanges[m]; });
     Object.keys(tRangeSubjects).forEach(key => { if (!mediums.includes(key.split('::')[0])) delete tRangeSubjects[key]; });
     Object.keys(tRangeOtherText).forEach(key => { if (!mediums.includes(key.split('::')[0])) delete tRangeOtherText[key]; });
-    Object.keys(tAdmissionTestNotes).forEach(m => { if (!mediums.includes(m)) delete tAdmissionTestNotes[m]; });
 
     wrap.innerHTML = '<p class="hint" style="margin-bottom:10px;">✅ আপনি যেসব বিষয়ে এক্সপার্ট নন সেগুলো তালিকা থেকে বাদ দিয়ে দিন।</p>' + mediums.map(medium => {
         const ranges = getRangesForMedium(medium);
@@ -616,25 +634,13 @@ function tRenderMediumClassSubjects() {
             </label>`).join('');
 
         const rangeBoxes = selectedRanges.map(rangeLabel => {
-            const range = ranges.find(r => r.label === rangeLabel);
             const key = medium + '::' + rangeLabel;
-
-            if (range && range.freeText) {
-                return `
-                    <div class="t-mc-subject-box" data-mc-box="${key}" style="margin:8px 0 16px 18px;">
-                        <p class="hint" style="margin-bottom:6px;"><strong>${rangeLabel}</strong></p>
-                        <input type="text" class="t-range-freetext" data-medium="${medium}"
-                            placeholder="কোন ভর্তি পরীক্ষা/বিষয় পড়াতে পারবেন লিখুন (যেমন: মেডিকেল ভর্তি - পদার্থ, রসায়ন, জীববিজ্ঞান)"
-                            oninput="handleTRangeFreeText('${medium}', this.value)"
-                            value="${tAdmissionTestNotes[medium] || ''}">
-                    </div>`;
-            }
 
             const options = getUniqueSubjectsForRange(medium, rangeLabel);
             const selectedSubs = tRangeSubjects[key] || [];
             const chips = options.map(subj => `
                 <label class="chip-item ${selectedSubs.includes(subj) ? 'chip-selected' : ''}">
-                    <input type="checkbox" class="t-mc-subject-cb" data-key="${key}" value="${subj}"
+                    <input type="checkbox" class="t-mc-subject-cb" data-key="${key}" value="${subj}" data-prev="${selectedSubs.includes(subj) ? 'true' : 'false'}"
                         ${selectedSubs.includes(subj) ? 'checked' : ''}
                         onchange="handleTRangeSubjectChange('${key}')">
                     <span>${subj}</span>
@@ -646,7 +652,7 @@ function tRenderMediumClassSubjects() {
                     <div class="chip-group">
                         ${chips}
                         <label class="chip-item ${otherChecked ? 'chip-selected' : ''}">
-                            <input type="checkbox" class="t-mc-subject-cb t-mc-other-cb" data-key="${key}" value="অন্যান্য বিষয়"
+                            <input type="checkbox" class="t-mc-subject-cb t-mc-other-cb" data-key="${key}" value="অন্যান্য বিষয়" data-prev="${otherChecked ? 'true' : 'false'}"
                                 ${otherChecked ? 'checked' : ''}
                                 onchange="handleTRangeSubjectChange('${key}')">
                             <span>অন্যান্য বিষয়</span>
@@ -667,7 +673,8 @@ function tRenderMediumClassSubjects() {
             </div>`;
     }).join('');
 
-    // রেন্ডারের পর disabled/chip-selected স্টাইল ঠিকভাবে সিঙ্ক করা (নতুন ডিফল্ট-চেকড "সকল বিষয়"সহ)
+    // রেন্ডারের পর chip-selected স্টাইল ঠিকভাবে সিঙ্ক করা (নতুন ডিফল্ট-চেকড "সকল বিষয়"সহ) —
+    // data-prev টেমপ্লেটেই বর্তমান checked-state অনুযায়ী বসানো, তাই এই পাসে নতুন cascade ট্রিগার হবে না
     Object.keys(tRangeSubjects).forEach(key => handleTRangeSubjectChange(key));
 
     tSyncMediumClassSubjectsJson();
@@ -690,11 +697,10 @@ window.handleTMediumRangeChange = function(medium) {
     const checkedLabels = Array.from(document.querySelectorAll(`input.t-medium-range-cb[data-medium="${medium}"]:checked`)).map(cb => cb.value);
     const previouslySelected = tMediumSelectedRanges[medium] || [];
 
-    // নতুন সিলেক্ট হওয়া রেঞ্জে ডিফল্টভাবে "সকল বিষয়"/"All Subjects" সিলেক্টেড থাকবে
+    // নতুন সিলেক্ট হওয়া রেঞ্জে ডিফল্টভাবে "সকল বিষয়"/"All Subjects" সিলেক্টেড থাকবে (থাকলে)
     checkedLabels.forEach(label => {
-        const range = ranges.find(r => r.label === label);
         const key = medium + '::' + label;
-        if (range && !range.freeText && !previouslySelected.includes(label) && !tRangeSubjects[key]) {
+        if (!previouslySelected.includes(label) && !tRangeSubjects[key]) {
             const options = getUniqueSubjectsForRange(medium, label);
             const allValue = options.find(o => o === 'সকল বিষয়' || o === 'All Subjects');
             tRangeSubjects[key] = allValue ? [allValue] : [];
@@ -709,7 +715,6 @@ window.handleTMediumRangeChange = function(medium) {
             const key = medium + '::' + label;
             delete tRangeSubjects[key];
             delete tRangeOtherText[key];
-            if (range && range.freeText) delete tAdmissionTestNotes[medium];
             if (range && range.classes) {
                 range.classes.forEach(cls => {
                     delete tMediumClassSubjects[medium + '::' + cls];
@@ -726,10 +731,8 @@ window.handleTMediumRangeChange = function(medium) {
     tRenderMediumClassSubjects();
 };
 
-window.handleTRangeFreeText = function(medium, value) {
-    tAdmissionTestNotes[medium] = value;
-};
-
+// "সকল বিষয়"/গ্রুপ-চেকবক্স (GROUP_SUBJECTS) টিক দিলে আন্ডারলাইং বিষয় অটো-টিক/আনটিক হবে —
+// ডিজেবল হবে না, প্রতিটা বিষয় সবসময় আলাদাভাবে টগল করা যাবে
 window.handleTRangeSubjectChange = function(key) {
     const box = document.querySelector(`.t-mc-subject-box[data-mc-box="${key}"]`);
     if (!box) return;
@@ -738,27 +741,17 @@ window.handleTRangeSubjectChange = function(key) {
     const rangeLabel = key.slice(sepIdx + 2);
 
     const checkboxes = box.querySelectorAll('.t-mc-subject-cb');
-    const allCb = Array.from(checkboxes).find(cb => cb.value === 'সকল বিষয়' || cb.value === 'All Subjects');
     const otherCb = box.querySelector('.t-mc-other-cb');
     const otherInput = box.querySelector('.t-mc-other-subject-text');
 
+    applyMasterGroupAutoSelect(checkboxes);
+
     checkboxes.forEach(cb => {
-        if (INDEPENDENT_SUBJECTS.includes(cb.value)) {
-            cb.disabled = false;
-            cb.closest('.chip-item').classList.remove('disabled');
-        } else if (allCb && allCb.checked && cb !== allCb) {
-            cb.checked = false;
-            cb.disabled = true;
-            cb.closest('.chip-item').classList.add('disabled');
-        } else {
-            cb.disabled = false;
-            cb.closest('.chip-item').classList.remove('disabled');
-        }
         cb.closest('.chip-item').classList.toggle('chip-selected', cb.checked);
     });
 
     if (otherInput && otherCb) {
-        const showOther = otherCb.checked && !otherCb.disabled;
+        const showOther = otherCb.checked;
         otherInput.style.display = showOther ? 'block' : 'none';
         if (!showOther) otherInput.value = '';
     }
@@ -787,6 +780,80 @@ function tSyncMediumClassSubjectsJson() {
 }
 
 document.querySelectorAll('input[name="t_mediums"]').forEach(cb => cb.addEventListener('change', tRenderMediumClassSubjects));
+
+/* ============================================================
+   বিশ্ববিদ্যালয় ভর্তি পরীক্ষার প্রস্তুতি — সম্পূর্ণ স্বতন্ত্র সেকশন
+   কোনো মিডিয়াম (t_mediums) সিলেকশনের ওপর নির্ভর করে না, তাই কোনো প্রকৃত ক্লাসের
+   সাথেও ম্যাপ হয় না — সরাসরি আলাদা Admission_Test_Subjects ফিল্ড হিসেবে সাবমিট হয়,
+   Teachable_Classes/matching-কে একেবারেই প্রভাবিত করে না
+============================================================ */
+window.handleAdmissionTestToggle = function(checked) {
+    const wrap = document.getElementById('t_admission_test_subjects');
+    if (!checked) {
+        wrap.innerHTML = '';
+        tAdmissionTestSelected = [];
+        tAdmissionTestOtherText = '';
+        return;
+    }
+    tRenderAdmissionTestSubjects();
+};
+
+function tRenderAdmissionTestSubjects() {
+    const wrap = document.getElementById('t_admission_test_subjects');
+    const otherChecked = tAdmissionTestSelected.includes('অন্যান্য বিষয়');
+    const chips = ADMISSION_TEST_SUBJECTS.map(subj => `
+        <label class="chip-item ${tAdmissionTestSelected.includes(subj) ? 'chip-selected' : ''}">
+            <input type="checkbox" class="t-admission-subject-cb" value="${subj}" data-prev="${tAdmissionTestSelected.includes(subj) ? 'true' : 'false'}"
+                ${tAdmissionTestSelected.includes(subj) ? 'checked' : ''}
+                onchange="handleAdmissionTestSubjectChange()">
+            <span>${subj}</span>
+        </label>`).join('');
+
+    wrap.innerHTML = `
+        <div class="chip-group">
+            ${chips}
+            <label class="chip-item ${otherChecked ? 'chip-selected' : ''}">
+                <input type="checkbox" class="t-admission-subject-cb t-admission-other-cb" value="অন্যান্য বিষয়" data-prev="${otherChecked ? 'true' : 'false'}"
+                    ${otherChecked ? 'checked' : ''}
+                    onchange="handleAdmissionTestSubjectChange()">
+                <span>অন্যান্য বিষয়</span>
+            </label>
+        </div>
+        <input type="text" class="t-admission-other-text" placeholder="বিষয়ের নাম লিখুন"
+            oninput="handleAdmissionTestSubjectChange()"
+            style="display:${otherChecked ? 'block' : 'none'}; margin-top:8px;"
+            value="${tAdmissionTestOtherText || ''}">`;
+}
+
+window.handleAdmissionTestSubjectChange = function() {
+    const wrap = document.getElementById('t_admission_test_subjects');
+    const checkboxes = wrap.querySelectorAll('.t-admission-subject-cb');
+    const otherCb = wrap.querySelector('.t-admission-other-cb');
+    const otherInput = wrap.querySelector('.t-admission-other-text');
+
+    applyMasterGroupAutoSelect(checkboxes);
+
+    checkboxes.forEach(cb => {
+        cb.closest('.chip-item').classList.toggle('chip-selected', cb.checked);
+    });
+
+    if (otherInput && otherCb) {
+        const showOther = otherCb.checked;
+        otherInput.style.display = showOther ? 'block' : 'none';
+        if (!showOther) otherInput.value = '';
+    }
+
+    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => {
+        if (cb === otherCb) {
+            const customVal = otherInput ? otherInput.value.trim() : '';
+            return customVal || 'অন্যান্য বিষয়';
+        }
+        return cb.value;
+    });
+
+    tAdmissionTestSelected = selected;
+    tAdmissionTestOtherText = otherInput ? otherInput.value : '';
+};
 
 /* ---- স্ট্যাটাস অনুযায়ী ডাইনামিক দ্বিতীয় ডকুমেন্ট লেবেল ---- */
 const tStatusSelect = document.getElementById('t_status');
@@ -950,7 +1017,9 @@ function teacherCollectDraftData() {
     data.t_medium_selected_ranges = tMediumSelectedRanges;
     data.t_range_subjects = tRangeSubjects;
     data.t_range_other_text = tRangeOtherText;
-    data.t_admission_test_notes = tAdmissionTestNotes;
+    data.t_admission_test_enabled = document.getElementById('t_admission_test_toggle') ? document.getElementById('t_admission_test_toggle').checked : false;
+    data.t_admission_test_selected = tAdmissionTestSelected;
+    data.t_admission_test_other_text = tAdmissionTestOtherText;
     return data;
 }
 function teacherSaveDraft() {
@@ -985,8 +1054,15 @@ function teacherRestoreDraft() {
     if (saved.t_medium_selected_ranges) tMediumSelectedRanges = saved.t_medium_selected_ranges;
     if (saved.t_range_subjects) tRangeSubjects = saved.t_range_subjects;
     if (saved.t_range_other_text) tRangeOtherText = saved.t_range_other_text;
-    if (saved.t_admission_test_notes) tAdmissionTestNotes = saved.t_admission_test_notes;
     tRenderMediumClassSubjects();
+
+    if (saved.t_admission_test_enabled) {
+        const toggle = document.getElementById('t_admission_test_toggle');
+        if (toggle) toggle.checked = true;
+        tAdmissionTestSelected = saved.t_admission_test_selected || [];
+        tAdmissionTestOtherText = saved.t_admission_test_other_text || '';
+        tRenderAdmissionTestSubjects();
+    }
 
     if (tTargetDistrictSelect.value) {
         tHandleDistrictChange(true);
@@ -1069,7 +1145,7 @@ tCheckBtn.addEventListener('click', async () => {
             }
         });
     });
-    if (!hasAnyClass && !Object.values(tAdmissionTestNotes).some(v => v && v.trim())) {
+    if (!hasAnyClass && !tAdmissionTestSelected.length) {
         alert('অনুগ্রহ করে অন্তত একটা রেঞ্জ নির্বাচন করুন।');
         return;
     }
@@ -1110,10 +1186,7 @@ tCheckBtn.addEventListener('click', async () => {
         const teachableClassesFlat = [...new Set(
             tMediumsArr.flatMap(m => tMediumSelectedClasses[m] || [])
         )].join(', ');
-        const admissionTestText = Object.keys(tAdmissionTestNotes)
-            .filter(m => tAdmissionTestNotes[m] && tAdmissionTestNotes[m].trim())
-            .map(m => `${m}: ${tAdmissionTestNotes[m].trim()}`)
-            .join(' | ');
+        const admissionTestText = tAdmissionTestSelected.join(', ');
 
         teacherFinalMessage =
             `📋 টিউটর সিভি\n\n` +
