@@ -531,6 +531,14 @@
                     <input type="hidden" id="t_subjects_by_class_json">
                 </div>
                 <div class="form-group">
+                    <label class="checkbox-item" style="font-weight:bold;">
+                        <input type="checkbox" id="t_admission_test_toggle" onchange="handleAdmissionTestToggle(this.checked)">
+                        বিশ্ববিদ্যালয় ভর্তি পরীক্ষার প্রস্তুতি পড়াতে পারবেন
+                    </label>
+                    <p class="hint">এটা কোনো নির্দিষ্ট মিডিয়ামের সাথে যুক্ত নয় — যেকোনো মিডিয়াম থেকেই একই থাকে</p>
+                    <div id="t_admission_test_subjects"></div>
+                </div>
+                <div class="form-group">
                     <label for="t_experience_years">পড়ানোর অভিজ্ঞতা (বছর সংখ্যা)</label>
                     <input type="text" inputmode="numeric" id="t_experience_years" placeholder="উদা: ২ অথবা 2">
                     <p class="hint">বাংলা বা ইংরেজি, যেকোনো ভাষায় সংখ্যা লিখতে পারেন</p>
