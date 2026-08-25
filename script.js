@@ -84,47 +84,33 @@ const studentCountSelect = document.getElementById('studentCount');
 const dynamicStudentsDiv = document.getElementById('dynamicStudents');
 
 // মিডিয়াম ড্রপডাউনের অপশন — subjects-data.js এর SUBJECTS_DATA থেকে
-// (+ দুইটা বিশেষ "ভর্তি প্রস্তুতি" অপশন, ADMISSION_MEDIUM_SUBJECTS থেকে, তালিকার একদম শেষে)
 const mediumsOptions = getMediums()
     .map(m => `<option value="${m}">${m}</option>`)
-    .join('') +
-    (typeof ADMISSION_MEDIUM_SUBJECTS !== 'undefined'
-        ? Object.keys(ADMISSION_MEDIUM_SUBJECTS).map(m => `<option value="${m}">${m}</option>`).join('')
-        : '');
+    .join('');
 
 // মিডিয়াম বদলালে সেই ছাত্রের ক্লাস (ক্লাস-গ্রুপ) ড্রপডাউন রিফ্রেশ হবে, বিষয় রিসেট হবে
-// ব্যতিক্রম: "বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি" / "মেডিক্যাল ভর্তি প্রস্তুতি" সিলেক্ট করলে ক্লাস ধাপ
-// দেখানো হয় না — ক্লাস ফিল্ড হাইড করে মিডিয়ামের নামই তার ভ্যালু হিসেবে বসিয়ে দিয়ে সরাসরি বিষয়-চিপ দেখানো হয়
 window.handleMediumChange = function(selectElement, index) {
     const box = document.querySelector(`.student-box[data-index="${index}"]`);
     const classSelect = box.querySelector('.s-class');
-    const classFormGroup = classSelect.closest('.form-group');
     const subjectsWrap = box.querySelector('.s-subjects-wrap');
 
-    const isSpecialMedium = typeof ADMISSION_MEDIUM_SUBJECTS !== 'undefined' && !!ADMISSION_MEDIUM_SUBJECTS[selectElement.value];
-
-    if (isSpecialMedium) {
-        classSelect.innerHTML = `<option value="${selectElement.value}" selected>${selectElement.value}</option>`;
-        classSelect.disabled = true;
-        if (classFormGroup) classFormGroup.style.display = 'none';
-        handleClassChange(classSelect, index);
-        return;
-    }
-
-    if (classFormGroup) classFormGroup.style.display = '';
-    classSelect.disabled = false;
     const groups = getClassGroupsForMedium(selectElement.value);
     classSelect.innerHTML = '<option value="" disabled selected>ক্লাস নির্বাচন করুন</option>' +
         groups.map(g => `<option value="${g}">${g}</option>`).join('');
+    classSelect.disabled = false;
 
     subjectsWrap.innerHTML = '<p class="hint">আগে ক্লাস নির্বাচন করুন</p>';
 };
 
-// বিষয়-তালিকা থেকে চিপ-গ্রুপ (+ "অন্যান্য" চেকবক্স ও ফ্রি-টেক্সট) বসিয়ে দেয় — সাধারণ
-// ক্লাস-ভিত্তিক বিষয় ও বিশেষ "ভর্তি প্রস্তুতি" বিষয় — দুই ক্ষেত্রেই ব্যবহৃত হয়
-function renderSubjectChipsForList(subjectsWrap, subjects, index) {
+// ক্লাস (ক্লাস-গ্রুপ) বদলালে সেই ছাত্রের বিষয়ের চিপ-লিস্ট রিফ্রেশ হবে
+window.handleClassChange = function(selectElement, index) {
+    const box = document.querySelector(`.student-box[data-index="${index}"]`);
+    const mediumSelect = box.querySelector('.s-medium');
+    const subjectsWrap = box.querySelector('.s-subjects-wrap');
+
+    const subjects = getSubjectsForClass(mediumSelect.value, selectElement.value);
     if (!subjects.length) {
-        subjectsWrap.innerHTML = '<p class="hint">এই বিভাগের জন্য কোনো বিষয় পাওয়া যায়নি</p>';
+        subjectsWrap.innerHTML = '<p class="hint">এই ক্লাসের জন্য কোনো বিষয় পাওয়া যায়নি</p>';
         return;
     }
     subjectsWrap.innerHTML = `<div class="chip-group">` +
@@ -141,21 +127,6 @@ function renderSubjectChipsForList(subjectsWrap, subjects, index) {
         </div>
         <input type="text" class="s-other-subject-text" placeholder="বিষয়ের নাম লিখুন" oninput="handleSubjectChipChange(${index})" style="display:none; margin-top:8px;">
         <input type="hidden" class="s-subjects" required>`;
-}
-
-// ক্লাস (ক্লাস-গ্রুপ) বদলালে সেই ছাত্রের বিষয়ের চিপ-লিস্ট রিফ্রেশ হবে
-// "বিশ্ববিদ্যালয়/মেডিক্যাল ভর্তি প্রস্তুতি" মিডিয়ামের বেলায় ক্লাসের বদলে ADMISSION_MEDIUM_SUBJECTS থেকে সরাসরি বিষয় নেওয়া হয়
-window.handleClassChange = function(selectElement, index) {
-    const box = document.querySelector(`.student-box[data-index="${index}"]`);
-    const mediumSelect = box.querySelector('.s-medium');
-    const subjectsWrap = box.querySelector('.s-subjects-wrap');
-
-    const isSpecialMedium = typeof ADMISSION_MEDIUM_SUBJECTS !== 'undefined' && !!ADMISSION_MEDIUM_SUBJECTS[mediumSelect.value];
-    const subjects = isSpecialMedium
-        ? ADMISSION_MEDIUM_SUBJECTS[mediumSelect.value]
-        : getSubjectsForClass(mediumSelect.value, selectElement.value);
-
-    renderSubjectChipsForList(subjectsWrap, subjects, index);
 };
 
 // "সকল বিষয়"/"All Subjects" বা কোনো গ্রুপ-চেকবক্স (সাইন্স/কমার্স/আর্টস গ্রুপ) টিক দিলে তার
@@ -501,7 +472,7 @@ checkBtn.addEventListener('click', () => {
             return;
         }
         studentDetailsText += `[শিক্ষার্থী ${i+1}] ক্লাস: ${sClasses[i].value}, মিডিয়াম: ${sMediums[i].value}\nবিষয়: ${sSubjects[i].value}\n`;
-        studentDetailsForSheet += `Student ${i+1}: Class ${sClasses[i].value} (${sMediums[i].value}), Subjects: ${sSubjects[i].value} | `;
+        studentDetailsForSheet += `Student ${i+1}: ${sMediums[i].value}, ${sClasses[i].value}, ${sSubjects[i].value}\n`;
         studentClassesRaw.push(sClasses[i].value);
         studentSubjectsRaw.push(sSubjects[i].value);
         studentMediumsRaw.push(sMediums[i].value);
@@ -513,7 +484,7 @@ checkBtn.addEventListener('click', () => {
     formDataObj = {
         formType: 'guardian',
         District: district, Area: area, Phone: phone, Address: address, Teacher_Gender: teacherGender,
-        Student_Count: studentCount, Student_Details: studentDetailsForSheet,
+        Student_Count: studentCount, Student_Details: studentDetailsForSheet.trim(),
         Student_Classes: studentClassesRaw.join('\n'), Student_Subjects: studentSubjectsRaw.join('\n'),
         Student_Mediums: studentMediumsRaw.join('\n'),
         Days: days, Duration: duration, Time: timeStr, Salary: salary, Special_Requirements: specialReq
@@ -651,43 +622,6 @@ function tRenderMediumClassSubjects() {
     Object.keys(tRangeOtherText).forEach(key => { if (!mediums.includes(key.split('::')[0])) delete tRangeOtherText[key]; });
 
     wrap.innerHTML = '<p class="hint" style="margin-bottom:10px;">✅ আপনি কোনো বিষয়ে এক্সপার্ট না কিন্তু ওই বিষয়টি সিলেক্ট হয়ে গেছে? সিলেক্টেড বিষয়ের উপর ট্যাপ করুন, বিষয়টি তালিকা থেকে বাদ হয়ে যাবে।</p>' + mediums.map(medium => {
-        // "বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি" / "মেডিক্যাল ভর্তি প্রস্তুতি" — এগুলো প্রকৃত মিডিয়াম না, তাই কোনো
-        // রেঞ্জ/ক্লাস-ধাপ নেই — subjects-data.js এর ADMISSION_MEDIUM_SUBJECTS থেকে সরাসরি বিষয়-চিপ দেখানো হয়
-        // (গার্ডিয়ান ফর্মের একই ভার্চুয়াল-মিডিয়াম হ্যান্ডলিংয়ের সাথে সামঞ্জস্যপূর্ণ)
-        const isSpecialMedium = typeof ADMISSION_MEDIUM_SUBJECTS !== 'undefined' && !!ADMISSION_MEDIUM_SUBJECTS[medium];
-        if (isSpecialMedium) {
-            const key = medium + '::' + medium;
-            const options = ADMISSION_MEDIUM_SUBJECTS[medium];
-            const selectedSubs = tRangeSubjects[key] || [];
-            const chips = options.map(subj => `
-                <label class="chip-item ${selectedSubs.includes(subj) ? 'chip-selected' : ''}">
-                    <input type="checkbox" class="t-mc-subject-cb" data-key="${key}" value="${subj}" data-prev="${selectedSubs.includes(subj) ? 'true' : 'false'}"
-                        ${selectedSubs.includes(subj) ? 'checked' : ''}
-                        onchange="handleTSpecialMediumSubjectChange('${key}')">
-                    <span>${subj}</span>
-                </label>`).join('');
-            const otherChecked = selectedSubs.includes('অন্যান্য বিষয়');
-            return `
-                <div class="t-medium-box" style="margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #eee;">
-                    <p class="hint" style="margin-bottom:6px;"><strong>${medium}</strong> — বিষয়সমূহ</p>
-                    <div class="t-mc-subject-box" data-mc-box="${key}">
-                        <div class="chip-group">
-                            ${chips}
-                            <label class="chip-item ${otherChecked ? 'chip-selected' : ''}">
-                                <input type="checkbox" class="t-mc-subject-cb t-mc-other-cb" data-key="${key}" value="অন্যান্য বিষয়" data-prev="${otherChecked ? 'true' : 'false'}"
-                                    ${otherChecked ? 'checked' : ''}
-                                    onchange="handleTSpecialMediumSubjectChange('${key}')">
-                                <span>অন্যান্য বিষয়</span>
-                            </label>
-                        </div>
-                        <input type="text" class="t-mc-other-subject-text" placeholder="বিষয়ের নাম লিখুন"
-                            oninput="handleTSpecialMediumSubjectChange('${key}')"
-                            style="display:${otherChecked ? 'block' : 'none'}; margin-top:8px;"
-                            value="${tRangeOtherText[key] || ''}">
-                    </div>
-                </div>`;
-        }
-
         const ranges = getRangesForMedium(medium);
         const selectedRanges = tMediumSelectedRanges[medium] || [];
 
@@ -743,14 +677,7 @@ function tRenderMediumClassSubjects() {
     // বিষয়-তালিকা ইতিমধ্যে handleTMediumRangeChange-এ এক্সপ্যান্ড করা হয়ে গেছে, তাই
     // data-prev টেমপ্লেটেই বর্তমান checked-state অনুযায়ী বসানো থাকে ও এই পাসে নতুন
     // cascade ট্রিগার হবে না (শুধু .chip-selected ক্লাস সিঙ্ক করে)
-    // — বিশেষ (ভার্চুয়াল) মিডিয়ামের কী-এর জন্য handleTSpecialMediumSubjectChange ব্যবহার হয়,
-    // বাকিদের জন্য আগের মতোই handleTRangeSubjectChange
-    Object.keys(tRangeSubjects).forEach(key => {
-        const keyMedium = key.slice(0, key.indexOf('::'));
-        const isSpecial = typeof ADMISSION_MEDIUM_SUBJECTS !== 'undefined' && !!ADMISSION_MEDIUM_SUBJECTS[keyMedium];
-        if (isSpecial) handleTSpecialMediumSubjectChange(key);
-        else handleTRangeSubjectChange(key);
-    });
+    Object.keys(tRangeSubjects).forEach(key => handleTRangeSubjectChange(key));
 
     tSyncMediumClassSubjectsJson();
 }
@@ -765,15 +692,6 @@ function expandRangeToClasses(medium, rangeLabel, subjectsArr) {
         if (!tMediumSelectedClasses[medium].includes(cls)) tMediumSelectedClasses[medium].push(cls);
         tMediumClassSubjects[medium + '::' + cls] = subjectsArr.slice();
     });
-}
-
-// "বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি"/"মেডিক্যাল ভর্তি প্রস্তুতি" — এই ভার্চুয়াল মিডিয়ামগুলোর কোনো
-// প্রকৃত ক্লাস নেই, তাই মিডিয়ামের নামটাই তার নিজের "ক্লাস" হিসেবে বসানো হয় (গার্ডিয়ান ফর্মে
-// classSelect.value = মিডিয়ামের নাম বসানোর সাথে সামঞ্জস্যপূর্ণ) — ফলে Teachable_Classes ও
-// Subjects_By_Class-এ এটা অন্য সব ক্লাসের মতোই স্বাভাবিকভাবে ধরা পড়ে
-function expandSpecialMediumToClasses(medium, subjectsArr) {
-    tMediumSelectedClasses[medium] = [medium];
-    tMediumClassSubjects[medium + '::' + medium] = subjectsArr.slice();
 }
 
 window.handleTMediumRangeChange = function(medium) {
@@ -857,46 +775,6 @@ window.handleTRangeSubjectChange = function(key) {
     tRangeOtherText[key] = otherInput ? otherInput.value : '';
 
     expandRangeToClasses(medium, rangeLabel, selected);
-    tSyncMediumClassSubjectsJson();
-};
-
-// উপরেরটার মতোই, শুধু বিশেষ (ভার্চুয়াল) মিডিয়ামের জন্য — key ফরম্যাট "মিডিয়াম::মিডিয়াম"
-// (rangeLabel সবসময় মিডিয়ামের নামের সমান), তাই expandRangeToClasses না ডেকে
-// expandSpecialMediumToClasses ডাকা হয়
-window.handleTSpecialMediumSubjectChange = function(key) {
-    const box = document.querySelector(`.t-mc-subject-box[data-mc-box="${key}"]`);
-    if (!box) return;
-    const sepIdx = key.indexOf('::');
-    const medium = key.slice(0, sepIdx);
-
-    const checkboxes = box.querySelectorAll('.t-mc-subject-cb');
-    const otherCb = box.querySelector('.t-mc-other-cb');
-    const otherInput = box.querySelector('.t-mc-other-subject-text');
-
-    applyMasterGroupAutoSelect(checkboxes);
-
-    checkboxes.forEach(cb => {
-        cb.closest('.chip-item').classList.toggle('chip-selected', cb.checked);
-    });
-
-    if (otherInput && otherCb) {
-        const showOther = otherCb.checked;
-        otherInput.style.display = showOther ? 'block' : 'none';
-        if (!showOther) otherInput.value = '';
-    }
-
-    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => {
-        if (cb === otherCb) {
-            const customVal = otherInput ? otherInput.value.trim() : '';
-            return customVal || 'অন্যান্য বিষয়';
-        }
-        return cb.value;
-    });
-
-    tRangeSubjects[key] = selected;
-    tRangeOtherText[key] = otherInput ? otherInput.value : '';
-
-    expandSpecialMediumToClasses(medium, selected);
     tSyncMediumClassSubjectsJson();
 };
 
@@ -1317,13 +1195,6 @@ tCheckBtn.addEventListener('click', async () => {
     let hasAnyClass = false;
     const missingSubjectKeys = [];
     tMediumsArr.forEach(medium => {
-        const isSpecialMedium = typeof ADMISSION_MEDIUM_SUBJECTS !== 'undefined' && !!ADMISSION_MEDIUM_SUBJECTS[medium];
-        // বিশেষ (ভার্চুয়াল) মিডিয়ামে কোনো রেঞ্জ/ক্লাস বাছাইয়ের ধাপ নেই, সরাসরি বিষয় বাছতে হয় —
-        // তাই এখানেই আলাদাভাবে "অন্তত একটা বিষয় বাছাই হয়েছে কিনা" যাচাই করা হয়
-        if (isSpecialMedium && !(tMediumSelectedClasses[medium] || []).length) {
-            missingSubjectKeys.push(`${medium}`);
-            return;
-        }
         (tMediumSelectedClasses[medium] || []).forEach(cls => {
             hasAnyClass = true;
             const key = medium + '::' + cls;
@@ -1369,6 +1240,7 @@ tCheckBtn.addEventListener('click', async () => {
         const name = get('t_name'), gender = get('t_gender'), phone = get('t_phone'), altPhone = get('t_altphone');
         const targetDistrict = get('t_target_district'), address = get('t_address');
         const areasStr = tSelectedAreas.join(', ');
+        const areasForSheet = tSelectedAreas.join('\n');
         const otherAreasStr = get('t_otherAreaText').trim();
         const locationsDisplay = [areasStr, otherAreasStr].filter(Boolean).join(', ');
         const status = get('t_status');
@@ -1383,9 +1255,18 @@ tCheckBtn.addEventListener('click', async () => {
             const [medium, cls] = key.split('::');
             return `${cls} (${medium}): ${parsedSubjectsByClass[key].join(', ')}`;
         }).join('\n');
-        const teachableClassesFlat = [...new Set(
-            tMediumsArr.flatMap(m => tMediumSelectedClasses[m] || [])
-        )].join(', ');
+        const nestedSubjectsByClass = tMediumsArr.map(medium => {
+            const classLines = (tMediumSelectedClasses[medium] || []).map(cls => {
+                const key = medium + '::' + cls;
+                const subjectsArrJson = (parsedSubjectsByClass[key] || []).map(s => JSON.stringify(s)).join(', ');
+                return `    ${JSON.stringify(cls)}: [${subjectsArrJson}]`;
+            }).join(',\n');
+            return `  ${JSON.stringify(medium)}: {\n${classLines}\n  }`;
+        }).join(',\n');
+        const subjectsByClassJsonText = `{\n${nestedSubjectsByClass}\n}`;
+        const teachableClassesFlat = tMediumsArr.map(m =>
+            `${m}: ${(tMediumSelectedClasses[m] || []).join(', ')}`
+        ).join('\n');
         const admissionTestText = tAdmissionTestSelected.join(', ');
 
         teacherFinalMessage =
@@ -1404,13 +1285,13 @@ tCheckBtn.addEventListener('click', async () => {
             formType: 'teacher',
             Name: name, Gender: gender, Phone: phone, Alt_Phone: altPhone,
             Target_District: targetDistrict, Address: address,
-            Areas: areasStr, Other_Areas: otherAreasStr, Current_Status: status,
+            Areas: areasForSheet, Other_Areas: otherAreasStr, Current_Status: status,
             Department: department, Session: session, Institution: institution,
             Institution_Type: institutionType, Degree_Type: degreeType,
             SSC_Group: sscGroup, SSC_Result: sscResult, SSC_School: sscSchool,
             HSC_Group: hscGroup, HSC_Result: hscResult, HSC_College: hscCollege,
-            Teachable_Classes: teachableClassesFlat, Teachable_Mediums: tMediumsArr.join(', '),
-            Subjects: subjectsSummaryText, Subjects_By_Class: JSON.stringify(parsedSubjectsByClass),
+            Teachable_Classes: teachableClassesFlat, Teachable_Mediums: tMediumsArr.join('\n'),
+            Subjects: subjectsSummaryText, Subjects_By_Class: subjectsByClassJsonText,
             Admission_Test_Subjects: admissionTestText,
             Experience_Years: experienceYears,
             ID_Doc_Type: idDocTypeLabel,
